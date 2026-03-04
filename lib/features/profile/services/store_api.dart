@@ -22,11 +22,12 @@ class StoreApi {
     try {
       final formData = FormData.fromMap({
         'user_id': userId.toString(),
-        'namaToko': namaToko,
-        'telfon': telfon,
-        'alamat': alamat,
+        // Field names harus sesuai dengan backend validation rules
+        'store_name': namaToko,
+        'phone': telfon,
+        'address': alamat,
         if (foto != null)
-          'foto': await MultipartFile.fromFile(foto.path, filename: foto.path.split('/').last),
+          'photo': await MultipartFile.fromFile(foto.path, filename: foto.path.split('/').last),
       });
 
       final response = await _apiClient.post(
@@ -34,9 +35,11 @@ class StoreApi {
         data: formData,
       );
 
-      if (response.statusCode == 200 && (response.data['success'] ?? false)) {
-        int? idPedagang = response.data['pedagang']?['id'];
-        if (idPedagang != null) await prefs.setInt('id_pedagang', idPedagang);
+      // Backend mengembalikan { "data": { "seller_id": ... } } dengan statusCode 201
+      if ((response.statusCode == 201 || response.statusCode == 200) &&
+          response.data['success'] == true) {
+        final sellerId = response.data['data']?['seller_id'] as int?;
+        if (sellerId != null) await prefs.setInt('id_pedagang', sellerId);
         return true;
       }
       return false;
@@ -51,8 +54,9 @@ class StoreApi {
     try {
       final response = await _apiClient.get(ApiEndpoints.getStoreStatus);
 
-      if (response.statusCode == 200) {
-        return response.data['isOnline'] == true;
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        // Backend mengembalikan { "data": { "is_online": true/false } }
+        return response.data['data']?['is_online'] == true;
       }
       return false;
     } on DioException catch (e) {

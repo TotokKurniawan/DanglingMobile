@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:damping/features/authentication/services/auth_service.dart';
 import 'package:damping/core/providers/sharedProvider.dart';
 import '../../../components/custom_surfix_icon.dart';
 import '../../../components/form_error.dart';
 import 'package:damping/core/utils/constants.dart';
 import '../../../helper/keyboard.dart';
-
 
 class SignInForm extends StatefulWidget {
   const SignInForm({super.key});
@@ -53,31 +53,47 @@ class _SignInFormState extends State<SignInForm> {
       try {
         final response = await authService.login(email!, password!);
         if (response['success'] == true) {
-          final token = response['data']['token'];
-          final user = response['data']['user'];
-          
+          final token = response['data']['token'] as String;
+          final user = response['data']['user'] as Map<String, dynamic>;
+
+          // Roles dari backend adalah array Spatie, ambil yang pertama
+          final role = (user['roles'] != null && (user['roles'] as List).isNotEmpty)
+              ? user['roles'][0] as String
+              : 'buyer';
+
+          // Login endpoint tidak mengembalikan seller_id.
+          // Ambil via GET /api/user (perlu token dulu di SharedPrefs)
+          int? sellerId;
+          if (role == 'seller') {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('token', token); // simpan sementara untuk request berikut
+            try {
+              final userResp = await authService.getMe();
+              sellerId = userResp?['seller']?['id'] as int?;
+            } catch (_) {}
+          }
+
+          if (!mounted) return;
           await Provider.of<Sharedprovider>(context, listen: false).saveProfile(
-             user['email'] ?? '',
-             user['name'] ?? '',
-             (user['roles'] != null && user['roles'].isNotEmpty) ? user['roles'][0] : 'buyer',
-             password!,
-             user['id'] ?? 0,
-             user['seller']?['id'], 
-             user['photo_path'] ?? '',
-             token ?? '',
+            user['email'] as String? ?? '',
+            user['name'] as String? ?? '',
+            role,
+            password!,
+            user['id'] as int? ?? 0,
+            sellerId,
+            user['photo_path'] as String? ?? '',
+            token,
           );
-          
+
           if (!mounted) return;
           Navigator.pushReplacementNamed(context, '/navigation');
         } else {
-          addError(error: response['message'] ?? "Login failed. Please check your credentials.");
+          addError(error: response['message'] as String? ?? 'Login failed. Please check your credentials.');
         }
       } catch (e) {
-        addError(error: "Server Error: ${e.toString()}");
+        addError(error: 'Server Error: ${e.toString()}');
       } finally {
-        if (mounted) {
-          setState(() => isLoading = false);
-        }
+        if (mounted) setState(() => isLoading = false);
       }
     }
   }

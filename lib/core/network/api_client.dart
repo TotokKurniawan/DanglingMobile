@@ -4,6 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiClient {
   late Dio _dio;
 
+  // Expose underlying Dio instance for advanced use cases (e.g. multipart via custom options)
+  Dio get dio => _dio;
+
   ApiClient() {
     _dio = Dio(BaseOptions(
       connectTimeout: const Duration(seconds: 30),

@@ -6,6 +6,7 @@ import 'package:damping/features/chats/services/chat_service.dart';
 import 'package:damping/core/network/api_endpoints.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:dio/dio.dart';
 
 // ────────────────────────────────────────────────────────────────
 //  Daftar Percakapan
@@ -68,88 +69,96 @@ class _ChatListScreenState extends State<ChatListScreen> {
               style: TextStyle(fontSize: 16, color: Colors.grey)));
     }
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextField(
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
-              hintText: 'Cari percakapan',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              fillColor: Colors.white,
-              filled: true,
-            ),
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: TextField(
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.search),
+            hintText: 'Cari percakapan',
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            fillColor: Colors.white,
+            filled: true,
           ),
         ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: _conversations.length,
-            itemBuilder: (context, index) {
-              final c = _conversations[index];
-              final conversationId = c['id'];
-              final partnerName = c['partner_name'] ?? 'Pengguna';
-              final partnerPhoto = c['partner_photo'];
-              final unreadCount = c['unread_count'] ?? 0;
-              final latestMsg = c['latest_message'];
-              final latestText =
-                  latestMsg != null ? latestMsg['message'] : 'Mulai percakapan';
+      ),
+      Expanded(
+        child: ListView.builder(
+          itemCount: _conversations.length,
+          itemBuilder: (context, index) {
+            final c = _conversations[index];
+            final conversationId = c['id'];
+            final partnerName = c['partner_name'] ?? 'Pengguna';
+            final partnerPhoto = c['partner_photo'];
+            final unreadCount = c['unread_count'] ?? 0;
+            final latestMsg = c['latest_message'];
+            final latestText =
+                latestMsg != null ? latestMsg['message'] : 'Mulai percakapan';
 
-              return Column(children: [
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.indigoAccent,
-                    backgroundImage:
-                        partnerPhoto != null ? NetworkImage(partnerPhoto) : null,
-                    child: partnerPhoto == null
-                        ? const Icon(Icons.person, color: Colors.white)
-                        : null,
-                  ),
-                  title: Text(partnerName,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(
-                    latestText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: unreadCount > 0 ? Colors.black : Colors.grey.shade600,
-                      fontWeight:
-                          unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                  trailing: unreadCount > 0
-                      ? Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                              color: Colors.red, shape: BoxShape.circle),
-                          child: Text(unreadCount.toString(),
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 12)),
-                        )
-                      : const SizedBox.shrink(),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MessageScreen(
-                        conversationId: conversationId,
-                        chatName: partnerName,
-                        avatarUrl: partnerPhoto,
-                      ),
-                    ),
-                  ).then((_) => _fetchConversations()),
+            return Column(children: [
+              ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Colors.indigoAccent,
+                  backgroundImage:
+                      partnerPhoto != null ? NetworkImage(partnerPhoto) : null,
+                  child: partnerPhoto == null
+                      ? const Icon(Icons.person, color: Colors.white)
+                      : null,
                 ),
-                const Divider(height: 1),
-              ]);
-            },
-          ),
+                title: Text(partnerName,
+                    style:
+                        const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(
+                  latestText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color:
+                        unreadCount > 0 ? Colors.black : Colors.grey.shade600,
+                    fontWeight: unreadCount > 0
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+                trailing: unreadCount > 0
+                    ? Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                            color: Colors.red, shape: BoxShape.circle),
+                        child: Text(unreadCount.toString(),
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 12)),
+                      )
+                    : const SizedBox.shrink(),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MessageScreen(
+                      conversationId: conversationId,
+                      chatName: partnerName,
+                      avatarUrl: partnerPhoto,
+                    ),
+                  ),
+                ).then((_) => _fetchConversations()),
+              ),
+              const Divider(height: 1),
+            ]);
+          },
         ),
-      ],
-    );
+      ),
+    ]);
   }
 }
 
 // ────────────────────────────────────────────────────────────────
 //  Layar Chat dengan WebSocket Real-time (Laravel Reverb)
+//
+//  Alur auth Pusher-compatible (wajib untuk private channel):
+//   1. Connect WS → tunggu "pusher:connection_established" → dapat socket_id
+//   2. POST /broadcasting/auth dengan channel_name + socket_id + Bearer token
+//   3. Dapat "auth" string dari backend
+//   4. Kirim "pusher:subscribe" dengan auth string → server izinkan
 // ────────────────────────────────────────────────────────────────
 class MessageScreen extends StatefulWidget {
   final int conversationId;
@@ -177,6 +186,7 @@ class _MessageScreenState extends State<MessageScreen> {
 
   WebSocketChannel? _channel;
   StreamSubscription? _wsSubscription;
+  bool _reconnecting = false;
 
   @override
   void initState() {
@@ -206,69 +216,132 @@ class _MessageScreenState extends State<MessageScreen> {
     }
   }
 
-  // ── WebSocket: subscribe ke private channel Reverb ─────────────
+  // ── Step 2: Minta auth string ke Laravel /broadcasting/auth ────
+  Future<String?> _fetchChannelAuth(
+      String socketId, String channelName, String token) async {
+    try {
+      final authUrl =
+          '${ApiEndpoints.baseUrl.replaceAll('/api', '')}/broadcasting/auth';
+      final dio = Dio();
+      final response = await dio.post(
+        authUrl,
+        data: {
+          'socket_id': socketId,
+          'channel_name': channelName,
+        },
+        options: Options(headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        }),
+      );
+      // Reverb mengembalikan { "auth": "key:signature" }
+      return response.data['auth'] as String?;
+    } catch (e) {
+      debugPrint('Error fetching channel auth: $e');
+      return null;
+    }
+  }
+
+  // ── Step 1 & 3: Connect WebSocket, tunggu connected, lalu subscribe ──
   Future<void> _connectWebSocket() async {
+    if (_reconnecting) return;
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     if (token == null) return;
 
     try {
-      // Reverb menggunakan protokol Pusher-compatible
-      // ws://{host}:{port}/app/{key}
+      // Tutup koneksi lama jika ada
+      await _wsSubscription?.cancel();
+      await _channel?.sink.close();
+
       final wsUri = Uri.parse(ApiEndpoints.reverbWsUrl);
       _channel = WebSocketChannel.connect(wsUri);
 
-      // 1. Subscribe ke private channel setelah connected
-      //    Reverb/Pusher protocol: kirim event "subscribe"
-      final subscribePayload = jsonEncode({
-        'event': 'pusher:subscribe',
-        'data': {
-          'channel': 'private-conversation.${widget.conversationId}',
-          'auth': '', // Reverb handles auth via /broadcasting/auth endpoint
-        },
-      });
+      final channelName =
+          'private-conversation.${widget.conversationId}';
 
-      _channel!.sink.add(subscribePayload);
-
-      // 2. Dengarkan pesan masuk
       _wsSubscription = _channel!.stream.listen(
-        (rawData) {
-          final decoded = jsonDecode(rawData as String);
+        (rawData) async {
+          final decoded = jsonDecode(rawData as String) as Map<String, dynamic>;
           final event = decoded['event'] as String?;
 
-          if (event == 'message.sent' || event == 'App\\Events\\MessageSent') {
-            final data = jsonDecode(decoded['data'] as String);
+          // ── Step 1: Dapat socket_id dari server ──────────────────
+          if (event == 'pusher:connection_established') {
+            final connData = jsonDecode(decoded['data'] as String);
+            final socketId = connData['socket_id'] as String;
 
-            // Hanya tambahkan pesan dari lawan bicara (pesan sendiri sudah ditambahkan secara optimistik)
-            if (data['is_mine'] != true) {
-              if (mounted) {
-                setState(() {
-                  _messages.add({
-                    'id': data['id'],
-                    'message': data['message'],
-                    'is_mine': false,
-                    'is_read': data['is_read'],
-                    'created_at': data['created_at'],
-                  });
-                });
-                _scrollToBottom();
-              }
+            debugPrint('WebSocket connected. socket_id: $socketId');
+
+            // ── Step 2: Minta auth untuk private channel ──────────
+            final authString =
+                await _fetchChannelAuth(socketId, channelName, token);
+
+            if (authString == null) {
+              debugPrint('Channel auth gagal — tidak dapat berlangganan.');
+              return;
             }
+
+            // ── Step 3: Subscribe dengan auth string ──────────────
+            _channel!.sink.add(jsonEncode({
+              'event': 'pusher:subscribe',
+              'data': {
+                'channel': channelName,
+                'auth': authString,
+              },
+            }));
+            debugPrint('Subscribed to $channelName');
+          }
+
+          // ── Terima pesan baru dari lawan bicara ──────────────────
+          else if (event == 'message.sent' ||
+              event == 'App\\Events\\MessageSent') {
+            final data = jsonDecode(decoded['data'] as String)
+                as Map<String, dynamic>;
+
+            // Hanya tampilkan pesan dari lawan bicara
+            // (pesan sendiri sudah ditambahkan secara optimistik)
+            if (data['is_mine'] != true && mounted) {
+              setState(() {
+                _messages.add({
+                  'id': data['id'],
+                  'message': data['message'],
+                  'is_mine': false,
+                  'is_read': data['is_read'],
+                  'created_at': data['created_at'],
+                });
+              });
+              _scrollToBottom();
+            }
+          }
+
+          // ── Tangani error dari server ─────────────────────────────
+          else if (event == 'pusher:error') {
+            debugPrint('Pusher error: ${decoded['data']}');
           }
         },
         onError: (error) {
           debugPrint('WebSocket error: $error');
-          // Reconnect setelah 3 detik
-          Future.delayed(const Duration(seconds: 3), _connectWebSocket);
+          _scheduleReconnect();
         },
         onDone: () {
-          debugPrint('WebSocket disconnected. Reconnecting...');
-          Future.delayed(const Duration(seconds: 3), _connectWebSocket);
+          debugPrint('WebSocket disconnected.');
+          _scheduleReconnect();
         },
       );
     } catch (e) {
       debugPrint('WebSocket connect failed: $e');
+      _scheduleReconnect();
     }
+  }
+
+  void _scheduleReconnect() {
+    if (!mounted || _reconnecting) return;
+    _reconnecting = true;
+    Future.delayed(const Duration(seconds: 3), () {
+      _reconnecting = false;
+      if (mounted) _connectWebSocket();
+    });
   }
 
   // ── Kirim pesan ──────────────────────────────────────────────────
@@ -278,7 +351,7 @@ class _MessageScreenState extends State<MessageScreen> {
 
     _messageController.clear();
 
-    // Tambahkan secara optimistik (langsung tampil tanpa menunggu server)
+    // Tambahkan secara optimistik
     setState(() {
       _messages.add({
         'message': text,
@@ -288,11 +361,12 @@ class _MessageScreenState extends State<MessageScreen> {
     });
     _scrollToBottom();
 
-    final success = await _chatService.sendMessage(widget.conversationId, text);
+    final success =
+        await _chatService.sendMessage(widget.conversationId, text);
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Gagal mengirim pesan')));
-      _fetchMessages(); // rollback pada kegagalan
+      _fetchMessages();
     }
   }
 
@@ -332,52 +406,61 @@ class _MessageScreenState extends State<MessageScreen> {
         Expanded(
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(10),
-                  itemCount: _messages.length,
-                  itemBuilder: (context, index) {
-                    final msg = _messages[index];
-                    final isMine = msg['is_mine'] == true;
+              : _messages.isEmpty
+                  ? const Center(
+                      child: Text('Belum ada pesan.',
+                          style: TextStyle(color: Colors.grey)))
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(10),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = _messages[index];
+                        final isMine = msg['is_mine'] == true;
 
-                    return Align(
-                      alignment:
-                          isMine ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 5),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.72,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isMine
-                              ? Colors.indigoAccent
-                              : Colors.grey.shade300,
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(16),
-                            topRight: const Radius.circular(16),
-                            bottomLeft: isMine
-                                ? const Radius.circular(16)
-                                : const Radius.circular(0),
-                            bottomRight: isMine
-                                ? const Radius.circular(0)
-                                : const Radius.circular(16),
+                        return Align(
+                          alignment: isMine
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Container(
+                            margin:
+                                const EdgeInsets.symmetric(vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            constraints: BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width * 0.72,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isMine
+                                  ? Colors.indigoAccent
+                                  : Colors.grey.shade300,
+                              borderRadius: BorderRadius.only(
+                                topLeft: const Radius.circular(16),
+                                topRight: const Radius.circular(16),
+                                bottomLeft: isMine
+                                    ? const Radius.circular(16)
+                                    : const Radius.circular(0),
+                                bottomRight: isMine
+                                    ? const Radius.circular(0)
+                                    : const Radius.circular(16),
+                              ),
+                            ),
+                            child: Text(
+                              msg['message'] ?? '',
+                              style: TextStyle(
+                                  color: isMine
+                                      ? Colors.white
+                                      : Colors.black87),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          msg['message'] ?? '',
-                          style: TextStyle(
-                              color:
-                                  isMine ? Colors.white : Colors.black87),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           color: Colors.white,
           child: SafeArea(
             child: Row(children: [

@@ -71,6 +71,12 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
       return;
     }
 
+    // Foto produk wajib karena backend mensyaratkan field 'photo'
+    if (_selectedImage == null) {
+      _showSnackbar('Pilih foto produk terlebih dahulu.');
+      return;
+    }
+
     final name = _nameController.text;
     final description = _descriptionController.text;
     final price = _priceController.text;
@@ -94,8 +100,9 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
         deskripsi: description,
         hargaProduk: int.parse(price),
         kategoriProduk: _selectedCategory!,
-        foto: _selectedImage != null ? _selectedImage! : File(''),
+        foto: _selectedImage!, // Sudah divalidasi tidak null di atas
       );
+
 
       if (success) {
         print('[SUCCESS] Produk $name berhasil ditambahkan.');

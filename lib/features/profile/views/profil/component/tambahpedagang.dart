@@ -34,7 +34,7 @@ class _TambahPedagangState extends State<TambahPedagang> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? role = prefs.getString('role');
     setState(() {
-      isSeller = role == 'pedagang';
+      isSeller = role == 'seller';
     });
   }
 
@@ -52,9 +52,9 @@ class _TambahPedagangState extends State<TambahPedagang> {
       );
 
       if (success) {
-        // Update SharedPreferences setelah upgrade berhasil
+        // Update SharedPreferences dengan role yang benar (sesuai Spatie backend)
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString('role', 'pedagang'); // Menyimpan role 'pedagang'
+        await prefs.setString('role', 'seller');
 
         // Update tampilan UI
         Navigator.pushReplacement(

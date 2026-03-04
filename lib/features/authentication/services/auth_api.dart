@@ -17,18 +17,23 @@ class AuthApi {
         data: {'email': email, 'password': password},
       );
 
+      // Backend mengembalikan: { success, data: { user: { id, name, email, roles[] }, token } }
       if (response.statusCode == 200 && response.data['success'] == true) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        final user = response.data['user'];
-        final token = response.data['token'];
+        final user = response.data['data']['user'] as Map<String, dynamic>;
+        final token = response.data['data']['token'] as String?;
 
+        // Backend menggunakan 'name' (bukan 'nama') dan 'roles' array (bukan 'role')
         await prefs.setString('email', email);
-        await prefs.setString('nama', user['nama'] ?? '');
-        await prefs.setString('role', user['role'] ?? '');
-        await prefs.setInt('user_id', user['id'] ?? 0);
+        await prefs.setString('nama', user['name'] as String? ?? '');
+        await prefs.setInt('user_id', user['id'] as int? ?? 0);
 
-        if (token != null && token.toString().isNotEmpty) {
-          await prefs.setString('token', token.toString());
+        final roles = user['roles'] as List?;
+        final role = (roles != null && roles.isNotEmpty) ? roles[0] as String : 'buyer';
+        await prefs.setString('role', role);
+
+        if (token != null && token.isNotEmpty) {
+          await prefs.setString('token', token);
         }
         return true;
       }
@@ -60,11 +65,7 @@ class AuthApi {
 
       if (response.statusCode == 200) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.remove('token');
-        await prefs.remove('email');
-        await prefs.remove('nama');
-        await prefs.remove('role');
-        await prefs.remove('user_id');
+        await prefs.clear(); // Hapus semua data sesi
         return true;
       }
       return false;

@@ -148,10 +148,10 @@ class _MapSectionState extends State<MapSection> {
 
     // Ambil data pedagang dari API berdasarkan lokasi pengguna (jika ada)
     List<Map<String, dynamic>>? pedagangData = await _homeApi.getOnlinePedagang(
-      token, 
       lat: _currentPosition?.latitude, 
       lng: _currentPosition?.longitude,
     );
+
 
     if (pedagangData != null) {
       setState(() {

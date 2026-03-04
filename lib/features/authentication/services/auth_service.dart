@@ -96,4 +96,19 @@ class AuthService {
       throw Exception('Network error: ${e.message}');
     }
   }
+
+  /// GET /api/user — profil lengkap termasuk relasi buyer/seller.
+  /// Digunakan setelah login untuk mendapatkan seller_id bagi akun seller.
+  Future<Map<String, dynamic>?> getMe() async {
+    try {
+      final response = await _apiClient.get('${ApiEndpoints.baseUrl}/user');
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      return null;
+    } on DioException catch (e) {
+      print('getMe error: ${e.message}');
+      return null;
+    }
+  }
 }

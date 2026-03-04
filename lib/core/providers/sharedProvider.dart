@@ -24,7 +24,7 @@ class Sharedprovider with ChangeNotifier {
   String? get token => _token;
   bool get showNotificationMenu => _showNotificationMenu;
 
-  bool get isSeller => _role == 'pedagang';
+  bool get isSeller => _role == 'seller';
 
   // Memuat profil dan token
   Future<void> loadProfile() async {
@@ -42,7 +42,7 @@ class Sharedprovider with ChangeNotifier {
     print("Token yang dimuat: $_token");
     print("idPedagang yang dimuat: $_idPedagang"); // Debugging
 
-    _showNotificationMenu = _role == 'pedagang';
+    _showNotificationMenu = _role == 'seller';
     notifyListeners();
   }
 
@@ -84,7 +84,7 @@ class Sharedprovider with ChangeNotifier {
     _imagePath = imagePath;
     _token = token;
 
-    _showNotificationMenu = role == 'pedagang';
+    _showNotificationMenu = role == 'seller';
 
     notifyListeners();
   }
@@ -180,7 +180,7 @@ class Sharedprovider with ChangeNotifier {
     await prefs.setString('role', newRole);
 
     _role = newRole;
-    _showNotificationMenu = newRole == 'pedagang';
+    _showNotificationMenu = newRole == 'seller';
 
     notifyListeners();
   }
@@ -189,7 +189,7 @@ class Sharedprovider with ChangeNotifier {
   Future<void> loadRole() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _role = prefs.getString('role');
-    _showNotificationMenu = _role == 'pedagang';
+    _showNotificationMenu = _role == 'seller';
     notifyListeners();
   }
 

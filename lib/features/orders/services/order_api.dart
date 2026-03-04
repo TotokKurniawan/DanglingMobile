@@ -11,7 +11,8 @@ class OrderApi {
       final response = await _apiClient.get(ApiEndpoints.orderHistory);
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        return response.data['data'] as List<dynamic>;
+        // Backend mengembalikan: { data: { role: '...', orders: [...] } }
+        return response.data['data']['orders'] as List<dynamic>? ?? [];
       }
 
       throw Exception(response.data['message'] ?? 'Gagal memuat histori pesanan.');
@@ -19,4 +20,5 @@ class OrderApi {
       throw Exception('Terjadi kesalahan saat memuat histori pesanan: ${e.message}');
     }
   }
+
 }
