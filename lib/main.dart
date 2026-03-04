@@ -1,8 +1,8 @@
-import 'package:damping/routes.dart';
-import 'package:damping/service/sharedProvider.dart';
+import 'package:damping/core/routing/routes.dart';
+import 'package:damping/core/providers/sharedProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:damping/screen/splash/splash_screen.dart';
+import 'package:damping/features/splash/views/splash/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
