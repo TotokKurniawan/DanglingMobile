@@ -10,16 +10,16 @@ import 'package:provider/provider.dart';
 import 'merchant_card.dart';
 
 class Merchant {
-  final String namaProduk;
+  final int id;
+  final int userId;
+  final String namaToko;
   final LatLng location;
   final String info;
-  final String kategori_produk;
-  final String fotoProduk;
   final String fotoPedagang;
-  final int hargaProduk;
+  final List<dynamic> products;
 
-  Merchant(this.namaProduk, this.location, this.info, this.kategori_produk,
-      this.fotoProduk, this.fotoPedagang, this.hargaProduk);
+  Merchant(this.id, this.userId, this.namaToko, this.location, this.info,
+      this.fotoPedagang, this.products);
 }
 
 class MapSection extends StatefulWidget {
@@ -146,22 +146,23 @@ class _MapSectionState extends State<MapSection> {
     final sharedProvider = Provider.of<Sharedprovider>(context, listen: false);
     String token = sharedProvider.token ?? '';
 
-    // Ambil data pedagang dari API
-    List<Map<String, dynamic>>? pedagangData =
-        await _homeApi.getOnlinePedagang(token);
+    // Ambil data pedagang dari API berdasarkan lokasi pengguna (jika ada)
+    List<Map<String, dynamic>>? pedagangData = await _homeApi.getOnlinePedagang(
+      token, 
+      lat: _currentPosition?.latitude, 
+      lng: _currentPosition?.longitude,
+    );
 
     if (pedagangData != null) {
       setState(() {
         // Memproses data pedagang menjadi daftar objek Merchant
         _merchants = pedagangData
             .map((pedagang) {
-              final namaProduk =
-                  pedagang['name'] ?? 'Nama produk tidak tersedia';
-              final kategoriProduk =
-                  pedagang['kategori_produk'] ?? 'Kategori tidak tersedia';
-
-              String fotoProduk = pedagang['fotoProduk'] ?? '';
+              final id = pedagang['id'] as int;
+              final namaToko = pedagang['name'] ?? 'Toko Tidak Bernama';
               String fotoPedagang = pedagang['fotoPedagang'] ?? '';
+
+              final userId = pedagang['user_id'] as int? ?? 0;
 
               double merchantLatitude = pedagang['latitude'] ?? 0.0;
               double merchantLongitude = pedagang['longitude'] ?? 0.0;
@@ -171,19 +172,17 @@ class _MapSectionState extends State<MapSection> {
                 return null; // Skip merchant tanpa koordinat valid
               }
 
-              String distance = pedagang['distance'] ?? '0.00 km';
-
-              int hargaProduk =
-                  pedagang['hargaProduk'] ?? 0; // Jika null, gunakan 0
+              String distance = pedagang['distance']?.toString() ?? '0.00';
+              List<dynamic> products = pedagang['products'] ?? [];
 
               return Merchant(
-                namaProduk,
+                id,
+                userId,
+                namaToko,
                 LatLng(merchantLatitude, merchantLongitude),
-                'Jarak: $distance',
-                kategoriProduk,
-                fotoProduk,
+                'Jarak: $distance km',
                 fotoPedagang,
-                hargaProduk,
+                products,
               );
             })
             .whereType<Merchant>() // Hapus data null akibat return null
@@ -198,11 +197,12 @@ class _MapSectionState extends State<MapSection> {
   List<Merchant> _getFilteredMerchants() {
     return _merchants.where((merchant) {
       final matchesCategory = _selectedCategory == 'All' ||
-          merchant.kategori_produk == _selectedCategory;
+          merchant.products.any((p) => p['category'] == _selectedCategory);
       final matchesSearch = _searchQuery.isEmpty ||
-          merchant.namaProduk
+          merchant.namaToko
               .toLowerCase()
-              .contains(_searchQuery.toLowerCase());
+              .contains(_searchQuery.toLowerCase()) ||
+          merchant.products.any((p) => (p['name'] ?? '').toString().toLowerCase().contains(_searchQuery.toLowerCase()));
       return matchesCategory && matchesSearch;
     }).toList();
   }

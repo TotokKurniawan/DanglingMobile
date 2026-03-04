@@ -1,38 +1,22 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/network/api_endpoints.dart';
+import 'package:dio/dio.dart';
+import 'package:damping/core/network/api_client.dart';
+import 'package:damping/core/network/api_endpoints.dart';
 
 class OrderApi {
+  final ApiClient _apiClient = ApiClient();
+
+  /// Ambil riwayat pesanan pembeli yang sedang login
   Future<List<dynamic>> orderHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('token');
-
-    if (token == null) {
-      throw Exception("Token tidak ditemukan, silakan login terlebih dahulu.");
-    }
-
-    final headers = {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    };
-
     try {
-      final response = await http.get(Uri.parse(ApiEndpoints.orderHistory), headers: headers);
+      final response = await _apiClient.get(ApiEndpoints.orderHistory);
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        if (data['success'] == true) {
-          return data['data']; // Mengembalikan data histori pesanan
-        } else {
-          throw Exception(data['message']);
-        }
-      } else {
-        throw Exception("Gagal memuat histori pesanan. Status: ${response.statusCode}");
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as List<dynamic>;
       }
-    } catch (e) {
-      throw Exception("Terjadi kesalahan saat memuat histori pesanan.");
+
+      throw Exception(response.data['message'] ?? 'Gagal memuat histori pesanan.');
+    } on DioException catch (e) {
+      throw Exception('Terjadi kesalahan saat memuat histori pesanan: ${e.message}');
     }
   }
 }

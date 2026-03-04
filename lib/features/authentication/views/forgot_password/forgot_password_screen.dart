@@ -1,44 +1,58 @@
-// import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
-// import 'components/forgot_pass_form.dart';
+import 'components/forgot_pass_form.dart';
 
-// class ForgotPasswordScreen extends StatelessWidget {
-//   static String routeName = "/forgot_password";
+class ForgotPasswordScreen extends StatelessWidget {
+  static String routeName = "/forgot_password";
 
-//   const ForgotPasswordScreen({super.key});
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text("Forgot Password"),
-//       ),
-//       body: const SizedBox(
-//         width: double.infinity,
-//         child: SingleChildScrollView(
-//           child: Padding(
-//             padding: EdgeInsets.symmetric(horizontal: 20),
-//             child: Column(
-//               children: [
-//                 SizedBox(height: 16),
-//                 Text(
-//                   "Forgot Password",
-//                   style: TextStyle(
-//                     fontSize: 24,
-//                     color: Colors.black,
-//                     fontWeight: FontWeight.bold,
-//                   ),
-//                 ),
-//                 Text(
-//                   "Please enter your email and we will send \nyou a link to return to your account",
-//                   textAlign: TextAlign.center,
-//                 ),
-//                 SizedBox(height: 32),
-//                 ForgotPassForm(),
-//               ],
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
+  const ForgotPasswordScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Lupa Password"),
+      ),
+      body: const SizedBox(
+        width: double.infinity,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                SizedBox(height: 16),
+                Text(
+                  "Lupa Password",
+                  style: TextStyle(
+                    fontSize: 24,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  "Masukkan email Anda dan kami akan mengirimkan \ntautan untuk mereset password akun Anda.",
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 32),
+                ForgotPassForm(),
+                SizedBox(height: 20),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, ResetPasswordScreen.routeName);
+                  },
+                  child: Text(
+                    "Sudah punya token reset? Klik di sini.",
+                    style: TextStyle(
+                      color: Colors.indigoAccent,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -126,8 +126,8 @@ class _MerchantCardState extends State<MerchantCard> {
                                 ),
                               ),
                               title: Text(
-                                merchant.namaProduk.isNotEmpty
-                                    ? merchant.namaProduk
+                                merchant.namaToko.isNotEmpty
+                                    ? merchant.namaToko
                                     : 'Nama tidak tersedia',
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
@@ -143,8 +143,8 @@ class _MerchantCardState extends State<MerchantCard> {
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
                                   child: Image.network(
-                                    merchant.fotoProduk.isNotEmpty
-                                        ? merchant.fotoProduk
+                                    (merchant.products.isNotEmpty && merchant.products.first['photo_url'] != null)
+                                        ? merchant.products.first['photo_url']
                                         : 'https://via.placeholder.com/150', // Gambar placeholder
                                     fit: BoxFit.cover,
                                   ),

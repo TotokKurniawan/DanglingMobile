@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../constants.dart';
+import 'package:damping/core/utils/constants.dart';
 import 'components/sign_up_form.dart';
+
 
 class SignUpScreen extends StatelessWidget {
   static String routeName = "/sign_up";

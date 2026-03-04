@@ -1,5 +1,6 @@
 import 'package:damping/core/routing/routes.dart';
 import 'package:damping/core/providers/sharedProvider.dart';
+import 'package:damping/core/providers/cart_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:damping/features/splash/views/splash/splash_screen.dart';
@@ -8,10 +9,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => Sharedprovider()
-        ..loadProfile()
-        ..loadToken(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => Sharedprovider()
+            ..loadProfile()
+            ..loadToken(),
+        ),
+        ChangeNotifierProvider(create: (context) => CartProvider()),
+      ],
       child: MyApp(),
     ),
   );

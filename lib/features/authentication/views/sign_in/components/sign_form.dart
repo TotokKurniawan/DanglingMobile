@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:damping/features/authentication/services/auth_api.dart';
+import 'package:damping/features/authentication/services/auth_service.dart';
 import 'package:damping/core/providers/sharedProvider.dart';
 import '../../../components/custom_surfix_icon.dart';
 import '../../../components/form_error.dart';
-import '../../../constants.dart';
+import 'package:damping/core/utils/constants.dart';
 import '../../../helper/keyboard.dart';
+
 
 class SignInForm extends StatefulWidget {
   const SignInForm({super.key});
@@ -19,8 +20,9 @@ class _SignInFormState extends State<SignInForm> {
   String? email;
   String? password;
   bool remember = false;
+  bool isLoading = false;
   final List<String?> errors = [];
-  final AuthApi authApi = AuthApi();
+  final AuthService authService = AuthService();
 
   // Method to add error
   void addError({String? error}) {
@@ -45,16 +47,37 @@ class _SignInFormState extends State<SignInForm> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       KeyboardUtil.hideKeyboard(context);
+      
+      setState(() => isLoading = true);
 
-      bool success = await authApi.login(email!, password!);
-      if (success) {
-        // Call loadProfile in Sharedprovider after successful login
-        Provider.of<Sharedprovider>(context, listen: false).loadProfile();
-
-        // Navigate to main page
-        Navigator.pushReplacementNamed(context, '/navigation');
-      } else {
-        addError(error: "Login failed. Please check your credentials.");
+      try {
+        final response = await authService.login(email!, password!);
+        if (response['success'] == true) {
+          final token = response['data']['token'];
+          final user = response['data']['user'];
+          
+          await Provider.of<Sharedprovider>(context, listen: false).saveProfile(
+             user['email'] ?? '',
+             user['name'] ?? '',
+             (user['roles'] != null && user['roles'].isNotEmpty) ? user['roles'][0] : 'buyer',
+             password!,
+             user['id'] ?? 0,
+             user['seller']?['id'], 
+             user['photo_path'] ?? '',
+             token ?? '',
+          );
+          
+          if (!mounted) return;
+          Navigator.pushReplacementNamed(context, '/navigation');
+        } else {
+          addError(error: response['message'] ?? "Login failed. Please check your credentials.");
+        }
+      } catch (e) {
+        addError(error: "Server Error: ${e.toString()}");
+      } finally {
+        if (mounted) {
+          setState(() => isLoading = false);
+        }
       }
     }
   }

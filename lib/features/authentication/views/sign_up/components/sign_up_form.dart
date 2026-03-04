@@ -1,8 +1,9 @@
 import 'package:damping/features/authentication/views/sign_in/sign_in_screen.dart';
-import 'package:damping/features/authentication/services/auth_api.dart';
+import 'package:damping/features/authentication/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import '../../../components/form_error.dart';
-import '../../../constants.dart';
+import 'package:damping/core/utils/constants.dart';
+
 
 class SignUpForm extends StatefulWidget {
   const SignUpForm({super.key});
@@ -13,11 +14,13 @@ class SignUpForm extends StatefulWidget {
 
 class _SignUpFormState extends State<SignUpForm> {
   final _formKey = GlobalKey<FormState>();
+  String? name;
+  String? phone;
   String? email;
   String? password;
   final List<String?> errors = [];
   bool _isLoading = false;
-  final AuthApi _authApi = AuthApi(); // Inisialisasi ApiService
+  final AuthService _authService = AuthService();
 
   void addError({String? error}) {
     if (!errors.contains(error)) {
@@ -36,32 +39,36 @@ class _SignUpFormState extends State<SignUpForm> {
   }
 
   Future<void> registerUser() async {
+    if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+    
     setState(() {
       _isLoading = true;
     });
 
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-
-      final success = await _authApi.register(email!, password!);
-      if (success) {
+    try {
+      final response = await _authService.register(name!, email!, phone!, password!);
+      if (response['success'] == true) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration successful!')),
+          const SnackBar(content: Text('Registration successful!')),
         );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const SignInScreen()),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration failed. Please try again.')),
-        );
+        addError(error: response['message'] ?? 'Registration failed. Please try again.');
+      }
+    } catch (e) {
+      addError(error: 'Server Error: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
-
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   @override
@@ -73,9 +80,44 @@ class _SignUpFormState extends State<SignUpForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Input Name
+            TextFormField(
+              decoration: const InputDecoration(
+                labelText: "Nama Lengkap",
+                hintText: "Masukkan nama",
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+              ),
+              onSaved: (newValue) => name = newValue,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return "Nama tidak boleh kosong";
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+
+            // Input Phone
+            TextFormField(
+              decoration: const InputDecoration(
+                labelText: "Nomor Telepon",
+                hintText: "Masukkan nomor telepon",
+                floatingLabelBehavior: FloatingLabelBehavior.always,
+              ),
+              keyboardType: TextInputType.phone,
+              onSaved: (newValue) => phone = newValue,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return "Nomor telepon tidak boleh kosong";
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+
             // Input Email
             TextFormField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Email",
                 hintText: "Masukkan email",
                 floatingLabelBehavior: FloatingLabelBehavior.always,
@@ -95,7 +137,7 @@ class _SignUpFormState extends State<SignUpForm> {
 
             // Input Password
             TextFormField(
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Password",
                 hintText: "Masukkan password",
                 floatingLabelBehavior: FloatingLabelBehavior.always,
@@ -134,8 +176,10 @@ class _SignUpFormState extends State<SignUpForm> {
                         "Sign Up",
                         style: TextStyle(fontSize: 18),
                       )
-                    : const Center(
-                        child: CircularProgressIndicator(),
+                    : const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(color: Colors.white),
                       ),
               ),
             ),

@@ -1,93 +1,75 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/network/api_endpoints.dart';
+import 'package:damping/core/network/api_client.dart';
+import 'package:damping/core/network/api_endpoints.dart';
 
+/// Legacy API class — sebagian besar fungsi sudah dipindahkan ke AuthService.
+/// Kelas ini masih dipertahankan untuk kompatibilitas, namun penggunaan
+/// AuthService (lib/features/authentication/services/auth_service.dart)
+/// lebih disarankan.
 class AuthApi {
-  Future<bool> login(String email, String password) async {
-    final url = Uri.parse(ApiEndpoints.login);
+  final ApiClient _apiClient = ApiClient();
 
+  Future<bool> login(String email, String password) async {
     try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({'email': email, 'password': password}),
+      final response = await _apiClient.post(
+        ApiEndpoints.login,
+        data: {'email': email, 'password': password},
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        final user = response.data['user'];
+        final token = response.data['token'];
 
-        if (data['success'] == true) {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('email', email);
+        await prefs.setString('nama', user['nama'] ?? '');
+        await prefs.setString('role', user['role'] ?? '');
+        await prefs.setInt('user_id', user['id'] ?? 0);
 
-          await prefs.setString('email', email);
-          await prefs.setString('nama', data['user']['nama'] ?? '');
-          await prefs.setString('role', data['user']['role'] ?? '');
-          await prefs.setInt('user_id', data['user']['id'] ?? 0);
-
-          if (data.containsKey('token') &&
-              data['token'] != null &&
-              data['token'].isNotEmpty) {
-            await prefs.setString('token', data['token']);
-          }
-          return true;
-        } else {
-          return false;
+        if (token != null && token.toString().isNotEmpty) {
+          await prefs.setString('token', token.toString());
         }
-      } else {
-        return false;
+        return true;
       }
-    } catch (e) {
+      return false;
+    } on DioException catch (e) {
+      print('Login error: ${e.message}');
       return false;
     }
   }
 
   Future<bool> register(String email, String password) async {
     try {
-      var request = http.MultipartRequest('POST', Uri.parse(ApiEndpoints.register));
-      request.fields['email'] = email;
-      request.fields['password'] = password;
-      request.headers["Content-Type"] = "multipart/form-data";
+      final response = await _apiClient.post(
+        ApiEndpoints.register,
+        data: {'email': email, 'password': password},
+      );
 
-      var response = await request.send();
-
-      if (response.statusCode == 201) {
-        final responseData = await http.Response.fromStream(response);
-        final data = jsonDecode(responseData.body);
-        return data['success'];
-      }
-      return false;
-    } catch (e) {
+      return (response.statusCode == 200 || response.statusCode == 201) &&
+          response.data['success'] == true;
+    } on DioException catch (e) {
+      print('Register error: ${e.message}');
       return false;
     }
   }
 
   Future<bool> logout() async {
-    final url = Uri.parse(ApiEndpoints.logout);
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    String? token = prefs.getString('token');
-    if (token == null) return false;
-
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+      final response = await _apiClient.post(ApiEndpoints.logout);
 
       if (response.statusCode == 200) {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.remove('token');
         await prefs.remove('email');
         await prefs.remove('nama');
         await prefs.remove('role');
-        await prefs.remove('id_user');
+        await prefs.remove('user_id');
         return true;
       }
       return false;
-    } catch (e) {
+    } on DioException catch (e) {
+      print('Logout error: ${e.message}');
       return false;
     }
   }

@@ -3,10 +3,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:damping/features/home/views/home/component/map.dart';
-import 'package:damping/features/orders/views/pesanan/component/carapembayaran.dart';
-import 'package:damping/features/orders/views/pesanan/VendorMapScreen.dart';
-import 'package:damping/features/orders/views/pesanan/component/rincian_harga_card.dart';
 import 'package:damping/features/orders/views/pesanan/component/map_component.dart';
+import 'package:damping/core/providers/cart_provider.dart';
+import 'package:damping/features/orders/views/checkout/checkout_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:damping/features/chats/services/chat_service.dart';
+import 'package:damping/features/chats/views/message/message.dart';
+import 'package:damping/features/profile/services/favorite_service.dart';
 
 class MerchantDetailScreen extends StatefulWidget {
   final Merchant merchant;
@@ -24,8 +27,67 @@ class MerchantDetailScreen extends StatefulWidget {
 
 class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
   final MapController _mapController = MapController();
-  final int adminFee = 1000;
-  String selectedPaymentMethod = '';
+  final FavoriteService _favoriteService = FavoriteService();
+  bool _isFavorited = false;
+  bool _isLoadingFavorite = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFavoriteStatus();
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    final favorites = await _favoriteService.getFavorites();
+    if (favorites != null) {
+      if (mounted) {
+        setState(() {
+          _isFavorited = favorites.any((fav) => fav['seller_id'] == widget.merchant.id);
+          _isLoadingFavorite = false;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _isLoadingFavorite = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    setState(() {
+      _isLoadingFavorite = true;
+    });
+
+    bool success;
+    if (_isFavorited) {
+      success = await _favoriteService.removeFromFavorites(widget.merchant.id);
+    } else {
+      success = await _favoriteService.addToFavorites(widget.merchant.id);
+    }
+
+    if (success) {
+      setState(() {
+        _isFavorited = !_isFavorited;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_isFavorited ? 'Ditambahkan ke Favorit' : 'Dihapus dari Favorit')),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal memperbarui Favorit')),
+        );
+      }
+    }
+
+    setState(() {
+      _isLoadingFavorite = false;
+    });
+  }
 
   // Menghitung jarak
   double _calculateDistance() {
@@ -38,82 +100,62 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
         1000;
   }
 
-  // Menghitung biaya total
-  double _calculateTotalCost() {
-    // Pastikan konversi ke double
-    return (widget.merchant.hargaProduk.toDouble() + adminFee.toDouble());
-  }
-
-  void _showPaymentMethodDialog() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return PilihMetodePembayaranDialog(
-          selectedPaymentMethod: selectedPaymentMethod,
-          onMethodSelected: (String method) {
-            setState(() {
-              selectedPaymentMethod = method;
-            });
-          },
-        );
-      },
-    );
-  }
-
-  // Memeriksa metode pembayaran dan melanjutkan ke halaman berikutnya
-  void _checkPaymentMethodAndProceed() {
-    if (selectedPaymentMethod.isEmpty) {
-      _showPaymentWarningDialog();
-    } else {
-      _navigateToVendorMapScreen();
-    }
-  }
-
-  // Menampilkan peringatan jika metode pembayaran belum dipilih
-  void _showPaymentWarningDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Peringatan'),
-          content:
-              const Text('Silakan pilih metode pembayaran terlebih dahulu.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Navigasi ke halaman VendorMapScreen
-  void _navigateToVendorMapScreen() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VendorMapScreen(
-          vendorPosition: widget.merchant.location,
-          currentPosition: widget.currentPosition,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     double distanceInKm = _calculateDistance();
-    double totalCost = _calculateTotalCost();
-
     double screenWidth = MediaQuery.of(context).size.width;
+    
+    final cartProvider = Provider.of<CartProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.merchant.namaProduk),
+        title: Text(widget.merchant.namaToko),
+        actions: [
+          _isLoadingFavorite 
+            ? const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))),
+              )
+            : IconButton(
+                icon: Icon(
+                  _isFavorited ? Icons.favorite : Icons.favorite_border,
+                  color: _isFavorited ? Colors.red : Colors.black54,
+                ),
+                tooltip: 'Favorit',
+                onPressed: _toggleFavorite,
+              ),
+          IconButton(
+            icon: const Icon(Icons.chat),
+            tooltip: 'Chat Penjual',
+            onPressed: () async {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const Center(child: CircularProgressIndicator()),
+              );
+              
+              final chatService = ChatService();
+              final convId = await chatService.createConversation(widget.merchant.userId);
+              
+              Navigator.pop(context); // Close loading
+              
+              if (convId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MessageScreen(
+                      conversationId: convId,
+                      chatName: widget.merchant.namaToko,
+                      avatarUrl: widget.merchant.fotoPedagang.isNotEmpty ? widget.merchant.fotoPedagang : null,
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal memulai obrolan')));
+              }
+            },
+          ),
+        ],
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -130,30 +172,31 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
         ),
         child: Column(
           children: [
-            // Mengubah ukuran gambar agar seukuran dengan map
+            // Gambar Toko
             Padding(
               padding: EdgeInsets.all(screenWidth * 0.04),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(
-                    12), // Memberikan sudut melengkung pada gambar
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  width:
-                      screenWidth, // Menggunakan lebar layar yang sama dengan map
-                  height: screenWidth * 0.5,
+                  width: screenWidth,
+                  height: screenWidth * 0.4,
                   child: Image.network(
-                    widget.merchant.fotoProduk,
+                    widget.merchant.fotoPedagang.isNotEmpty
+                        ? widget.merchant.fotoPedagang
+                        : 'https://via.placeholder.com/400x200',
                     width: double.infinity,
                     height: double.infinity,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Icon(
-                      Icons.broken_image,
-                      size: screenWidth * 0.6,
+                      Icons.store,
+                      size: screenWidth * 0.4,
                       color: Colors.grey,
                     ),
                   ),
                 ),
               ),
             ),
+            // Map
             MerchantMap(
               mapController: _mapController,
               currentPosition: widget.currentPosition,
@@ -164,50 +207,84 @@ class _MerchantDetailScreenState extends State<MerchantDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Rincian nama, kategori, dan jarak
-                  Text(
-                    widget.merchant.namaProduk,
+                   Text(
+                    widget.merchant.namaToko,
                     style: TextStyle(
                       fontSize: screenWidth * 0.06,
                       fontWeight: FontWeight.bold,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
                   SizedBox(height: screenWidth * 0.01),
+                  Text("Jarak: ${distanceInKm.toStringAsFixed(2)} km"),
+                  SizedBox(height: screenWidth * 0.03),
+                  Divider(),
                   Text(
-                    "Kategori: ${widget.merchant.kategori_produk}",
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                    "Katalog Menu",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: screenWidth * 0.01),
-                  Text(
-                    "Info: ${widget.merchant.info}",
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
-                  ),
-                  SizedBox(height: screenWidth * 0.01),
-                  Text(
-                    "Jarak: ${distanceInKm.toStringAsFixed(2)} km",
-                    style: TextStyle(
-                      fontSize: screenWidth * 0.03,
-                    ),
-                  ),
-                  SizedBox(height: screenWidth * 0.02),
-                  RincianHargaCard(
-                    basePrice: widget.merchant.hargaProduk.toDouble(),
-                    adminFee: adminFee.toDouble(),
-                    totalCost: totalCost,
-                    selectedPaymentMethod: selectedPaymentMethod,
-                    onPaymentMethodTap: _showPaymentMethodDialog,
-                    onConfirmTap: _checkPaymentMethodAndProceed,
-                  ),
+                  SizedBox(height: 10),
+                  widget.merchant.products.isEmpty 
+                    ? const Center(child: Text("Tidak ada produk."))
+                    : ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: widget.merchant.products.length,
+                        itemBuilder: (context, index) {
+                          final product = widget.merchant.products[index];
+                          // Format currency
+                          final price = double.tryParse(product['price'].toString()) ?? 0.0;
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  product['photo_url'] ?? 'https://via.placeholder.com/80',
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (c, e, s) => const Icon(Icons.fastfood, size: 40),
+                                ),
+                              ),
+                              title: Text(product['name'] ?? 'No Name', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text(
+                                "Rp ${price.toStringAsFixed(0)}\n${product['category'] ?? ''}",
+                              ),
+                              isThreeLine: true,
+                              trailing: IconButton(
+                                icon: const Icon(Icons.add_shopping_cart, color: Colors.blue),
+                                onPressed: () {
+                                  cartProvider.addToCart(widget.merchant, product);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("${product['name']} ditambahkan ke keranjang"),
+                                      duration: const Duration(seconds: 1),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        }
+                    )
                 ],
               ),
             ),
           ],
         ),
       ),
+      floatingActionButton: cartProvider.totalQuantity > 0 ? FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CheckoutScreen()),
+          );
+        },
+        label: Text('Keranjang (${cartProvider.totalQuantity}) - Rp ${cartProvider.totalPrice.toStringAsFixed(0)}'),
+        icon: const Icon(Icons.shopping_cart),
+        backgroundColor: Colors.blueAccent,
+      ) : null,
     );
   }
 }
+

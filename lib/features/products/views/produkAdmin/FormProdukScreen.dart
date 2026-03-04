@@ -91,6 +91,7 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
           'Nama: $name, Harga: $price, Kategori: $_selectedCategory');
       bool success = await _productApi.tambahProduk(
         namaProduk: name,
+        deskripsi: description,
         hargaProduk: int.parse(price),
         kategoriProduk: _selectedCategory!,
         foto: _selectedImage != null ? _selectedImage! : File(''),

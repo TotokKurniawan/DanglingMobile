@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-// Pastikan ini memiliki definisi kTextColor dan kPrimaryColor
-import 'constants.dart';
+import 'package:damping/core/utils/constants.dart';
+
 
 class AppTheme {
   static ThemeData lightTheme(BuildContext context) {

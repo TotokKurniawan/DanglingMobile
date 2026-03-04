@@ -1,128 +1,112 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/network/api_endpoints.dart';
+import 'package:damping/core/network/api_client.dart';
+import 'package:damping/core/network/api_endpoints.dart';
 
 class StoreApi {
+  final ApiClient _apiClient = ApiClient();
+
+  /// Upgrade akun pembeli menjadi pedagang (multipart — foto toko)
   Future<bool> upgradeToSeller({
     required String namaToko,
     required String telfon,
     required String alamat,
     File? foto,
   }) async {
-    final url = Uri.parse(ApiEndpoints.upgradeToSeller);
     SharedPreferences prefs = await SharedPreferences.getInstance();
-
     int? userId = prefs.getInt('user_id');
-    String? token = prefs.getString('token');
 
-    if (userId == null || token == null) return false;
+    if (userId == null) return false;
 
     try {
-      var request = http.MultipartRequest('POST', url)
-        ..headers.addAll({'Authorization': 'Bearer $token'});
-
-      request.fields['user_id'] = userId.toString();
-      request.fields['namaToko'] = namaToko;
-      request.fields['telfon'] = telfon;
-      request.fields['alamat'] = alamat;
-
-      if (foto != null) {
-        request.files.add(await http.MultipartFile.fromPath('foto', foto.path));
-      }
-
-      final response = await request.send();
-
-      if (response.statusCode == 200) {
-        final responseData = await http.Response.fromStream(response);
-        final data = jsonDecode(responseData.body);
-
-        if (data['success'] ?? false) {
-          int? idPedagang = data['pedagang']?['id'];
-          if (idPedagang != null) await prefs.setInt('id_pedagang', idPedagang);
-          return true;
-        }
-        return false;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  Future<bool> getStoreStatus() async {
-    try {
-      final url = Uri.parse(ApiEndpoints.getStoreStatus);
-      final response = await http.get(url, headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
+      final formData = FormData.fromMap({
+        'user_id': userId.toString(),
+        'namaToko': namaToko,
+        'telfon': telfon,
+        'alamat': alamat,
+        if (foto != null)
+          'foto': await MultipartFile.fromFile(foto.path, filename: foto.path.split('/').last),
       });
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['isOnline'] == true;
+      final response = await _apiClient.post(
+        ApiEndpoints.upgradeToSeller,
+        data: formData,
+      );
+
+      if (response.statusCode == 200 && (response.data['success'] ?? false)) {
+        int? idPedagang = response.data['pedagang']?['id'];
+        if (idPedagang != null) await prefs.setInt('id_pedagang', idPedagang);
+        return true;
       }
       return false;
-    } catch (e) {
+    } on DioException catch (e) {
+      print('upgradeToSeller error: ${e.message}');
       return false;
     }
   }
 
+  /// Ambil status toko saat ini (online / offline)
+  Future<bool> getStoreStatus() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.getStoreStatus);
+
+      if (response.statusCode == 200) {
+        return response.data['isOnline'] == true;
+      }
+      return false;
+    } on DioException catch (e) {
+      print('getStoreStatus error: ${e.message}');
+      return false;
+    }
+  }
+
+  /// Ubah status toko menjadi online atau offline
   Future<bool> updateStatus(bool isOnline) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? userId = prefs.getInt('user_id');
-    String? token = prefs.getString('token');
 
-    if (userId == null || token == null) return false;
+    if (userId == null) return false;
 
     try {
-      final response = await http.post(
-        Uri.parse(ApiEndpoints.updateStatus),
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
+      final response = await _apiClient.post(
+        ApiEndpoints.updateStoreStatus,
+        data: {
           'user_id': userId,
           'status': isOnline ? 'online' : 'offline',
-        }),
+        },
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['success'];
+        return response.data['success'] == true;
       }
       return false;
-    } catch (e) {
+    } on DioException catch (e) {
+      print('updateStatus error: ${e.message}');
       return false;
     }
   }
 
-  Future<bool> checkLocation({required double latitude, required double longitude}) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
-    if (token == null || token.isEmpty) return false;
-
+  /// Kirim koordinat GPS terkini ke backend sebagai lokasi pedagang
+  Future<bool> checkLocation({
+    required double latitude,
+    required double longitude,
+  }) async {
     try {
-      final response = await http.post(
-        Uri.parse(ApiEndpoints.checkLocation),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
+      final response = await _apiClient.put(
+        ApiEndpoints.updateLocation,
+        data: {
           'latitude': latitude,
           'longitude': longitude,
-        }),
+        },
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return data['success'] == true;
+        return response.data['success'] == true;
       }
       return false;
-    } catch (e) {
+    } on DioException catch (e) {
+      print('checkLocation error: ${e.message}');
       return false;
     }
   }

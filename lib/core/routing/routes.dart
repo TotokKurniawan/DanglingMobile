@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:damping/features/splash/views/splash/splash_screen.dart';
 import 'package:damping/features/authentication/views/sign_in/sign_in_screen.dart';
 import 'package:damping/features/authentication/views/sign_up/sign_up_screen.dart';
-// import 'package:damping/features/authentication/views/forgot_password/forgot_password_screen.dart';
+import 'package:damping/features/authentication/views/forgot_password/forgot_password_screen.dart';
+import 'package:damping/features/authentication/views/forgot_password/reset_password_screen.dart';
 import 'package:damping/features/products/views/produkAdmin/FormProdukScreen.dart';
 // ignore: unused_import
 
@@ -17,7 +18,8 @@ final Map<String, WidgetBuilder> routes = {
   SplashScreen.routeName: (context) => const SplashScreen(),
   SignInScreen.routeName: (context) => const SignInScreen(),
   SignUpScreen.routeName: (context) => const SignUpScreen(),
-  // ForgotPasswordScreen.routeName: (context) => const ForgotPasswordScreen(),
+  ForgotPasswordScreen.routeName: (context) => const ForgotPasswordScreen(),
+  ResetPasswordScreen.routeName: (context) => const ResetPasswordScreen(),
   Navigation.routeName: (context) => const Navigation(),
   HomeScreen.routeName: (context) => const HomeScreen(),
   Message.routename: (context) => const Message(),

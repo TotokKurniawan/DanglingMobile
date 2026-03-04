@@ -1,53 +1,71 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/network/api_endpoints.dart';
+import 'package:dio/dio.dart';
+import 'package:damping/core/network/api_client.dart';
+import 'package:damping/core/network/api_endpoints.dart';
 
 class ProductApi {
+  final ApiClient _apiClient = ApiClient();
+
+  /// Ambil seluruh produk milik seller yang sedang login
+  Future<List<dynamic>?> getProducts() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.getProducts);
+
+      if (response.statusCode == 200) {
+        return response.data['data']['products'] as List<dynamic>;
+      }
+      return null;
+    } on DioException catch (e) {
+      print('Error getProducts: ${e.message}');
+      return null;
+    }
+  }
+
+  /// Hapus produk berdasarkan ID
+  Future<bool> deleteProduct(int id) async {
+    try {
+      final response = await _apiClient.delete('${ApiEndpoints.deleteProduk}$id');
+      return response.statusCode == 200;
+    } on DioException catch (e) {
+      print('Error deleteProduct: ${e.message}');
+      return false;
+    }
+  }
+
+  /// Tambah produk baru (multipart — foto produk)
   Future<bool> tambahProduk({
     required String namaProduk,
+    required String deskripsi,
     required int hargaProduk,
     required String kategoriProduk,
     required File foto,
   }) async {
-    final url = Uri.parse(ApiEndpoints.tambahProduk);
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
-    int? userId = prefs.getInt('user_id');
-    int? idPedagang = prefs.getInt('id_pedagang');
-
-    if (token == null || token.isEmpty || !token.contains('.')) return false;
-    if (userId == null) return false;
     if (!await foto.exists()) return false;
 
-    final data = {
-      'nama_produk': namaProduk,
-      'harga_produk': hargaProduk.toString(),
-      'kategori_produk': kategoriProduk,
-      'id_pedagang': idPedagang.toString(),
-    };
+    // Map kategori ke category_id
+    int categoryId = 1;
+    if (kategoriProduk == 'Makanan Ringan') categoryId = 1;
+    if (kategoriProduk == 'Makanan Berat') categoryId = 2;
+    if (kategoriProduk == 'Jasa') categoryId = 3;
 
     try {
-      var request = http.MultipartRequest('POST', url)
-        ..headers.addAll({'Authorization': 'Bearer $token'})
-        ..fields.addAll(data);
+      final formData = FormData.fromMap({
+        'name': namaProduk,
+        'description': deskripsi,
+        'price': hargaProduk.toString(),
+        'stock': '999',
+        'category_id': categoryId.toString(),
+        'photo': await MultipartFile.fromFile(foto.path, filename: foto.path.split('/').last),
+      });
 
-      request.files.add(await http.MultipartFile.fromPath('foto', foto.path));
+      final response = await _apiClient.post(
+        ApiEndpoints.tambahProduk,
+        data: formData,
+      );
 
-      var response = await request.send();
-
-      if (response.statusCode == 201) {
-        return true;
-      } else {
-        response.stream.transform(utf8.decoder).listen((value) {
-          final responseData = jsonDecode(value);
-          print("Pesan error dari server: ${responseData['message']}");
-        });
-        return false;
-      }
-    } catch (e) {
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      print('Error tambahProduk: ${e.message}');
       return false;
     }
   }

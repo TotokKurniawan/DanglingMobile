@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../constants.dart';
+import 'package:damping/core/utils/constants.dart';
 import 'components/splash_content.dart';
+
 
 class SplashScreen extends StatefulWidget {
   static String routeName = "/splash";

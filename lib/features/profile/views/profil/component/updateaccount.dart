@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
+import 'package:damping/core/providers/sharedProvider.dart';
+import 'package:damping/features/profile/services/profile_service.dart';
 
 class UpdateProfileForm extends StatefulWidget {
   @override
@@ -9,73 +10,77 @@ class UpdateProfileForm extends StatefulWidget {
 
 class _UpdateProfileFormState extends State<UpdateProfileForm> {
   final _formKey = GlobalKey<FormState>();
+  final ProfileService _profileService = ProfileService();
+  
   String? name;
-  String? email;
+  String? email; // email is usually non-editable or requires complex validation. We'll show it as read-only.
   String? phoneNumber;
   String? alamat;
-  LatLng? selectedLocation;
+  
+  bool _isLoading = false;
 
-  Future<void> _getCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied.');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
-    }
-
-    // Mendapatkan lokasi sekarang
-    Position position = await Geolocator.getCurrentPosition();
-    setState(() {
-      selectedLocation = LatLng(position.latitude, position.longitude);
+  @override
+  void initState() {
+    super.initState();
+    // Initialize form values from SharedProvider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final sharedProvider = Provider.of<Sharedprovider>(context, listen: false);
+      setState(() {
+        name = sharedProvider.nama;
+        email = sharedProvider.email;
+        // Assume phone and address are not fully mapped in provider yet or we just let user input them if empty
+      });
     });
   }
 
-  // Fungsi untuk membuka peta dan memilih lokasi
-  Future<void> _pickLocationFromMap() async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LocationPickerScreen(
-          onLocationSelected: (LatLng location) {
-            setState(() {
-              selectedLocation = location;
-            });
-          },
-        ),
-      ),
-    );
-  }
-
   // Validasi dan simpan data ketika tombol 'Update' ditekan
-  void _updateProfile() {
+  Future<void> _updateProfile() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      // Di sini Anda bisa mengirim data ke backend atau melakukan aksi lainnya
-      print('Name: $name');
-      print('Email: $email');
-      print('Phone Number: $phoneNumber');
-      print('Address: $alamat');
-      print(
-          'Selected Location: ${selectedLocation?.latitude}, ${selectedLocation?.longitude}');
+      
+      final sharedProvider = Provider.of<Sharedprovider>(context, listen: false);
+      final buyerId = sharedProvider.idUser;
+      
+      if (buyerId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ID Pengguna tidak ditemukan.')));
+        return;
+      }
 
-      // Tampilkan pesan sukses
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile Updated Successfully')),
+      setState(() => _isLoading = true);
+
+      final result = await _profileService.updateBuyerProfile(
+        buyerId, 
+        name ?? '', 
+        phoneNumber ?? '', 
+        alamat ?? ''
       );
+
+      setState(() => _isLoading = false);
+
+      if (mounted) {
+        if (result != null) {
+          // Update provider with new name
+          sharedProvider.saveProfile(
+            email ?? '',
+            name ?? '',
+            sharedProvider.role ?? 'buyer',
+            sharedProvider.password ?? '',
+            buyerId,
+            sharedProvider.idPedagang,
+            sharedProvider.imagePath ?? '',
+            sharedProvider.token ?? '',
+          );
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profil berhasil diperbarui!')),
+          );
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gagal memperbarui profil.')),
+          );
+        }
+      }
     }
   }
 
@@ -83,19 +88,21 @@ class _UpdateProfileFormState extends State<UpdateProfileForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Update Profile"),
+        title: const Text("Edit Profil", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.indigoAccent,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Container(
-        decoration: BoxDecoration(
+        height: double.infinity,
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Colors.indigoAccent, Colors.white],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
-        child: Center(
+        child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Card(
@@ -104,7 +111,7 @@ class _UpdateProfileFormState extends State<UpdateProfileForm> {
                 borderRadius: BorderRadius.circular(16.0),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -112,49 +119,42 @@ class _UpdateProfileFormState extends State<UpdateProfileForm> {
                     children: [
                       // Input Nama
                       TextFormField(
+                        initialValue: name,
                         decoration: const InputDecoration(
-                          labelText: 'Name',
-                          hintText: 'Enter your name',
+                          labelText: 'Nama Lengkap',
+                          hintText: 'Masukkan nama Anda',
                           prefixIcon: Icon(Icons.person),
                           border: OutlineInputBorder(),
                         ),
                         onSaved: (newValue) => name = newValue,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your name';
+                            return 'Nama tidak boleh kosong';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
 
-                      // Input Email
+                      // Input Email (Read Only essentially or just info)
                       TextFormField(
-                        decoration: const InputDecoration(
+                        initialValue: email,
+                        readOnly: true,
+                        decoration: InputDecoration(
                           labelText: 'Email',
-                          hintText: 'Enter your email',
-                          prefixIcon: Icon(Icons.email),
-                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.email),
+                          border: const OutlineInputBorder(),
+                          fillColor: Colors.grey.shade200,
+                          filled: true,
                         ),
-                        keyboardType: TextInputType.emailAddress,
-                        onSaved: (newValue) => email = newValue,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
-                          } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                              .hasMatch(value)) {
-                            return 'Please enter a valid email address';
-                          }
-                          return null;
-                        },
                       ),
                       const SizedBox(height: 16),
 
                       // Input Nomor Telepon
                       TextFormField(
                         decoration: const InputDecoration(
-                          labelText: 'Phone Number',
-                          hintText: 'Enter your phone number',
+                          labelText: 'Nomor Telepon',
+                          hintText: 'Contoh: 081234567890',
                           prefixIcon: Icon(Icons.phone),
                           border: OutlineInputBorder(),
                         ),
@@ -162,9 +162,7 @@ class _UpdateProfileFormState extends State<UpdateProfileForm> {
                         onSaved: (newValue) => phoneNumber = newValue,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your phone number';
-                          } else if (!RegExp(r'^\d{10,15}$').hasMatch(value)) {
-                            return 'Please enter a valid phone number';
+                            return 'Nomor telepon wajib diisi';
                           }
                           return null;
                         },
@@ -174,84 +172,44 @@ class _UpdateProfileFormState extends State<UpdateProfileForm> {
                       // Input Alamat
                       TextFormField(
                         decoration: const InputDecoration(
-                          labelText: 'Address',
-                          hintText: 'Enter your address',
+                          labelText: 'Alamat Lengkap',
+                          hintText: 'Cth: Jl. Merdeka No.1',
                           prefixIcon: Icon(Icons.home),
                           border: OutlineInputBorder(),
                         ),
+                        maxLines: 3,
                         onSaved: (newValue) => alamat = newValue,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your address';
+                            return 'Alamat wajib diisi';
                           }
                           return null;
                         },
                       ),
-                      const SizedBox(height: 16),
-
-                      // Tombol untuk mendapatkan lokasi sekarang
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.location_on),
-                        label: const Text("Use Current Location"),
-                        onPressed: _getCurrentLocation,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.indigoAccent,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 24,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.0),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Tombol untuk memilih lokasi dari peta
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.map),
-                        label: const Text("Pick Location from Map"),
-                        onPressed: _pickLocationFromMap,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.indigoAccent,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 24,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.0),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Menampilkan koordinat lokasi yang dipilih
-                      selectedLocation != null
-                          ? Text(
-                              'Selected Location: ${selectedLocation!.latitude}, ${selectedLocation!.longitude}')
-                          : const Text('No location selected'),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
 
                       // Tombol Update
-                      ElevatedButton(
-                        onPressed: _updateProfile,
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.indigoAccent,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 24,
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _updateProfile,
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.indigoAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.0),
-                          ),
-                        ),
-                        child: const Text(
-                          'Update Profile',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          child: _isLoading 
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
+                                'Simpan Perubahan',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                         ),
                       ),
                     ],
@@ -261,62 +219,6 @@ class _UpdateProfileFormState extends State<UpdateProfileForm> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-// Halaman untuk memilih lokasi dari Google Maps
-class LocationPickerScreen extends StatefulWidget {
-  final Function(LatLng) onLocationSelected;
-
-  const LocationPickerScreen({Key? key, required this.onLocationSelected})
-      : super(key: key);
-
-  @override
-  _LocationPickerScreenState createState() => _LocationPickerScreenState();
-}
-
-class _LocationPickerScreenState extends State<LocationPickerScreen> {
-  GoogleMapController? mapController;
-  LatLng? _pickedLocation;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pick a Location'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: () {
-              if (_pickedLocation != null) {
-                widget.onLocationSelected(_pickedLocation!);
-                Navigator.pop(context);
-              }
-            },
-          ),
-        ],
-      ),
-      body: GoogleMap(
-        onMapCreated: (controller) => mapController = controller,
-        initialCameraPosition: const CameraPosition(
-          target: LatLng(-6.200000, 106.816666), // Lokasi awal peta (Jakarta)
-          zoom: 14,
-        ),
-        onTap: (LatLng location) {
-          setState(() {
-            _pickedLocation = location;
-          });
-        },
-        markers: _pickedLocation != null
-            ? {
-                Marker(
-                  markerId: const MarkerId('pickedLocation'),
-                  position: _pickedLocation!,
-                ),
-              }
-            : {},
       ),
     );
   }
