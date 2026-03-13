@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:damping/core/widgets/GradientBackground.dart';
+import 'package:streetmarketid/core/widgets/GradientBackground.dart';
 import 'package:flutter/material.dart';
-import 'package:damping/features/chats/services/chat_service.dart';
-import 'package:damping/core/network/api_endpoints.dart';
+import 'package:streetmarketid/features/chats/services/chat_service.dart';
+import 'package:streetmarketid/core/network/api_endpoints.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:dio/dio.dart';

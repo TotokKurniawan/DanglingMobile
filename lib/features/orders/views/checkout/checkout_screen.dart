@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:damping/core/providers/cart_provider.dart';
-import 'package:damping/features/orders/services/order_service.dart';
+import 'package:streetmarketid/core/providers/cart_provider.dart';
+import 'package:streetmarketid/features/orders/services/order_service.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({Key? key}) : super(key: key);

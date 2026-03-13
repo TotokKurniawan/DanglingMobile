@@ -1,9 +1,9 @@
-import 'package:damping/core/routing/routes.dart';
-import 'package:damping/core/providers/sharedProvider.dart';
-import 'package:damping/core/providers/cart_provider.dart';
+import 'package:streetmarketid/core/routing/routes.dart';
+import 'package:streetmarketid/core/providers/sharedProvider.dart';
+import 'package:streetmarketid/core/providers/cart_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:damping/features/splash/views/splash/splash_screen.dart';
+import 'package:streetmarketid/features/splash/views/splash/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

@@ -1,8 +1,8 @@
-import 'package:damping/features/authentication/views/sign_in/sign_in_screen.dart';
-import 'package:damping/features/authentication/services/auth_service.dart';
+import 'package:streetmarketid/features/authentication/views/sign_in/sign_in_screen.dart';
+import 'package:streetmarketid/features/authentication/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import '../../../components/form_error.dart';
-import 'package:damping/core/utils/constants.dart';
+import 'package:streetmarketid/core/utils/constants.dart';
 
 
 class SignUpForm extends StatefulWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:damping/core/utils/constants.dart';
+import 'package:streetmarketid/core/utils/constants.dart';
 
 
 class AppTheme {

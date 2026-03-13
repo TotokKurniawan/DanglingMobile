@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:damping/features/profile/services/favorite_service.dart';
-import 'package:damping/features/home/views/home/component/map.dart'; // Using Merchant model from here temporarily if needed
+import 'package:streetmarketid/features/profile/services/favorite_service.dart';
+import 'package:streetmarketid/features/home/views/home/component/map.dart'; // Using Merchant model from here temporarily if needed
 import 'package:latlong2/latlong.dart';
-import 'package:damping/features/orders/views/pesanan/merchantdetailscreen.dart';
+import 'package:streetmarketid/features/orders/views/pesanan/merchantdetailscreen.dart';
 
 class WishlistScreen extends StatefulWidget {
   static String routeName = '/wishlistscreen';
@@ -17,11 +17,37 @@ class _WishlistScreenState extends State<WishlistScreen> {
   final FavoriteService _favoriteService = FavoriteService();
   List<dynamic> _favoritedSellers = [];
   bool _isLoading = true;
+  LatLng? _currentPosition;
 
   @override
   void initState() {
     super.initState();
     _fetchFavorites();
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+      
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      
+      if (permission == LocationPermission.deniedForever) return;
+      
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      if (mounted) {
+        setState(() {
+          _currentPosition = LatLng(position.latitude, position.longitude);
+        });
+      }
+    } catch (e) {
+      print("GPS Error in wishlist: $e");
+    }
   }
 
   Future<void> _fetchFavorites() async {
@@ -86,18 +112,25 @@ class _WishlistScreenState extends State<WishlistScreen> {
                       elevation: 4,
                       child: InkWell(
                         onTap: () {
-                          // Normally, you'd map to a clean Merchant array, but here we can open it directly if we build the object
+                          final merchantLatitude = double.tryParse(seller['latitude']?.toString() ?? '0') ?? 0.0;
+                          final merchantLongitude = double.tryParse(seller['longitude']?.toString() ?? '0') ?? 0.0;
+                          
                           final merchant = Merchant(
                             seller['id'],
-                            fav['seller_id'], // technically, user_id needs to be in here... user_id might not be returned by favorite API
+                            fav['seller_id'], 
                             seller['store_name'] ?? 'Toko',
-                            LatLng(0.0, 0.0), // The API doesn't return full coordinates in all versions or we can parse from seller['latitude'] 
+                            LatLng(merchantLatitude, merchantLongitude),
                             'Favorit',
                             seller['photo_url'] ?? '',
-                            [], // Empty products array, detail screen fetch isn't implemented? Actually, let's just make it a display card for now
+                            [], // Kita belum fetch produk, biarkan kosong sementara
                           );
                           
-                          // Navigator.push(context, MaterialPageRoute(builder: (c) => MerchantDetailScreen(merchant: merchant, currentPosition: LatLng(0,0))));
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (c) => MerchantDetailScreen(
+                              merchant: merchant, 
+                              currentPosition: _currentPosition ?? LatLng(0,0)
+                            )
+                          ));
                         },
                         child: Row(
                           children: [

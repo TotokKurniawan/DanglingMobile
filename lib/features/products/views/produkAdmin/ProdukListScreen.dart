@@ -73,6 +73,35 @@ class _ProdukListScreenState extends State<ProdukListScreen> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        Transform.scale(
+                          scale: 0.8,
+                          child: Switch(
+                            value: product['is_active'] == 1 || product['is_active'] == true,
+                            activeColor: Colors.green,
+                            onChanged: (val) async {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (_) => const Center(child: CircularProgressIndicator()),
+                              );
+                              final success = await _productApi.toggleActive(product['id']);
+                              Navigator.pop(context); // close dialog
+                              if (success) {
+                                _fetchProducts();
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(val ? "Produk diaktifkan" : "Produk dinonaktifkan")));
+                              }
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => FormProdukScreen(initialProduct: product)),
+                            ).then((value) => _fetchProducts());
+                          },
+                        ),
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:damping/core/utils/constants.dart';
+import 'package:streetmarketid/core/utils/constants.dart';
 import 'components/splash_content.dart';
 
 
@@ -17,7 +17,7 @@ class _SplashScreenState extends State<SplashScreen> {
   int currentPage = 0;
   List<Map<String, String>> splashData = [
     {
-      "text": "Welcome to DangLing, Let’s JOS!",
+      "text": "Welcome to StreetMarketID, Let’s JOS!",
       "image": "assets/images/DL.jpg"
     },
   ];

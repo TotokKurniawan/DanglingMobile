@@ -1,8 +1,8 @@
-import 'package:damping/features/home/views/home/component/promo_carousel.dart';
+import 'package:streetmarketid/features/home/views/home/component/promo_carousel.dart';
 import 'package:flutter/material.dart';
-import 'package:damping/features/home/views/home/component/map.dart';
-import 'package:damping/features/notifications/views/notif/notification_list_screen.dart';
-import 'package:damping/features/notifications/services/notification_service.dart';
+import 'package:streetmarketid/features/home/views/home/component/map.dart';
+import 'package:streetmarketid/features/notifications/views/notif/notification_list_screen.dart';
+import 'package:streetmarketid/features/notifications/services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   static String routeName = '/homescreen';

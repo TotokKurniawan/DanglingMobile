@@ -1,11 +1,11 @@
-import 'package:damping/features/home/views/home/homescreen.dart';
-import 'package:damping/features/chats/views/message/message.dart';
-import 'package:damping/features/notifications/views/notif/orderScreen.dart';
-import 'package:damping/features/profile/views/profil/profil.dart';
-import 'package:damping/features/orders/views/history/historyscreen.dart';
+import 'package:streetmarketid/features/home/views/home/homescreen.dart';
+import 'package:streetmarketid/features/chats/views/message/message.dart';
+import 'package:streetmarketid/features/notifications/views/notif/orderScreen.dart';
+import 'package:streetmarketid/features/profile/views/profil/profil.dart';
+import 'package:streetmarketid/features/orders/views/history/historyscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'service/sharedProvider.dart';
+import 'package:streetmarketid/core/providers/sharedProvider.dart';
 
 const Color inActiveIconColor = Color.fromARGB(255, 252, 59, 0);
 

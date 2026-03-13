@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:damping/core/network/api_client.dart';
-import 'package:damping/core/network/api_endpoints.dart';
+import 'package:streetmarketid/core/network/api_client.dart';
+import 'package:streetmarketid/core/network/api_endpoints.dart';
 
 class ProfileService {
   final ApiClient _apiClient = ApiClient();
@@ -50,6 +50,38 @@ class ProfileService {
     }
   }
 
+  /// Update data penjual (Toko)
+  Future<Map<String, dynamic>?> updateSellerProfile(
+      int sellerId, String storeName, String phone, String address, {String? imagePath}) async {
+    try {
+      final mapData = <String, dynamic>{
+        '_method': 'PUT', // Route PUT di-spoofing via POST
+        'store_name': storeName,
+        'phone': phone,
+        'address': address,
+      };
+
+      if (imagePath != null && imagePath.isNotEmpty) {
+        mapData['photo'] = await MultipartFile.fromFile(imagePath);
+      }
+
+      FormData formData = FormData.fromMap(mapData);
+
+      final response = await _apiClient.post(
+        '${ApiEndpoints.updateSellerProfile}/$sellerId',
+        data: formData,
+      );
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'];
+      }
+      return null;
+    } catch (e) {
+      print('Error updating seller profile: $e');
+      return null;
+    }
+  }
+
   /// Change Password
   Future<bool> changePassword(String oldPassword, String newPassword) async {
     try {
@@ -58,6 +90,7 @@ class ProfileService {
         data: {
           'old_password': oldPassword,
           'new_password': newPassword,
+          // Backend validation: 'new_password|confirmed' requires this field
           'new_password_confirmation': newPassword,
         },
       );
@@ -77,6 +110,20 @@ class ProfileService {
     } catch (e) {
       print('Error deleting account: $e');
       return false;
+    }
+  }
+
+  /// Ambil profil penjual
+  Future<Map<String, dynamic>?> getSellerProfile(int sellerId) async {
+    try {
+      final response = await _apiClient.get('${ApiEndpoints.baseUrl}/sellers/$sellerId');
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data']['seller'];
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching seller profile: $e');
+      return null;
     }
   }
 }

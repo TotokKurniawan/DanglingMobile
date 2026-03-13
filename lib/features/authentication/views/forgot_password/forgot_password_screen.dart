@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'components/forgot_pass_form.dart';
+import 'reset_password_screen.dart';
 
 class ForgotPasswordScreen extends StatelessWidget {
   static String routeName = "/forgot_password";

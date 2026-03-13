@@ -1,8 +1,8 @@
-import 'package:damping/features/home/views/home/component/map.dart';
+import 'package:streetmarketid/features/home/views/home/component/map.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:damping/features/orders/views/pesanan/merchantdetailscreen.dart';
+import 'package:streetmarketid/features/orders/views/pesanan/merchantdetailscreen.dart';
 
 class MerchantCard extends StatefulWidget {
   final List<Merchant> nearbyMerchants;

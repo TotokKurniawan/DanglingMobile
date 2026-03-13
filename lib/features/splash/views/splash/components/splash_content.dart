@@ -13,9 +13,9 @@ class SplashContent extends StatelessWidget {
       mainAxisAlignment:
           MainAxisAlignment.center, // Mengatur posisi konten agar terpusat
       children: <Widget>[
-        // Menambahkan teks "DangLing" dengan font dari Google Fonts
+        // Menambahkan teks "StreetMarketID" dengan font dari Google Fonts
         Text(
-          "DangLing",
+          "StreetMarketID",
           style: GoogleFonts.lobster(
             // Menggunakan font Google Fonts
             textStyle: const TextStyle(
@@ -36,7 +36,7 @@ class SplashContent extends StatelessWidget {
           ),
         ),
         const SizedBox(
-            height: 20), // Memberikan jarak antara teks "DangLing" dan gambar
+            height: 20), // Memberikan jarak antara teks "StreetMarketID" dan gambar
         // Menampilkan gambar yang diberikan
         Image.asset(
           image!, // Memastikan image tidak null

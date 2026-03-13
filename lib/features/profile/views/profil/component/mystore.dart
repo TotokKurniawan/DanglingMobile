@@ -1,7 +1,9 @@
-import 'package:damping/features/profile/services/store_api.dart';
-import 'package:damping/features/profile/services/seller_stats_service.dart';
+import 'package:streetmarketid/features/profile/services/store_api.dart';
+import 'package:streetmarketid/features/profile/services/seller_stats_service.dart';
 import 'package:flutter/material.dart';
-import 'package:damping/features/products/views/produkAdmin/ProdukListScreen.dart';
+import 'package:streetmarketid/features/products/views/produkAdmin/ProdukListScreen.dart';
+import 'package:streetmarketid/features/profile/views/profil/component/updateseller.dart';
+import 'package:streetmarketid/features/profile/views/profil/component/review_list_screen.dart';
 import 'package:geolocator/geolocator.dart';
 
 enum StoreStatus { online, offline }
@@ -147,6 +149,21 @@ class _MyStoreScreenState extends State<MyStoreScreen> {
         backgroundColor: Colors.indigoAccent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_store),
+            tooltip: 'Edit Profil Toko',
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => UpdateSellerForm()),
+              );
+              if (result == true) {
+                _loadStoreData(); // Refresh if updated
+              }
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -209,7 +226,10 @@ class _MyStoreScreenState extends State<MyStoreScreen> {
                 value: '${stats['rating_average'] ?? 0.0}', 
                 subValue: '(${stats['rating_count']} Ulasan)',
                 icon: Icons.star, 
-                color: Colors.amber
+                color: Colors.amber,
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (c) => ReviewListScreen()));
+                },
               )
             ),
             const SizedBox(width: 12),
@@ -234,21 +254,24 @@ class _StatCard extends StatelessWidget {
   final String? subValue;
   final IconData icon;
   final Color color;
+  final VoidCallback? onTap;
 
-  const _StatCard({required this.title, required this.value, this.subValue, required this.icon, required this.color});
+  const _StatCard({required this.title, required this.value, this.subValue, required this.icon, required this.color, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(

@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:damping/core/routing/navigation.dart';
-import 'package:damping/features/profile/services/store_api.dart';
+import 'package:streetmarketid/core/routing/navigation.dart';
+import 'package:streetmarketid/features/profile/services/store_api.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';

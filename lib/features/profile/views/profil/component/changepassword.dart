@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:damping/features/profile/services/profile_service.dart';
+import 'package:streetmarketid/features/profile/services/profile_service.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   @override

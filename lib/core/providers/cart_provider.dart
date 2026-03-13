@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:damping/features/home/views/home/component/map.dart';
+import 'package:streetmarketid/features/home/views/home/component/map.dart';
 
 class CartItem {
   final dynamic product;

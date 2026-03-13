@@ -1,5 +1,5 @@
-import 'package:damping/core/network/api_client.dart';
-import 'package:damping/core/network/api_endpoints.dart';
+import 'package:streetmarketid/core/network/api_client.dart';
+import 'package:streetmarketid/core/network/api_endpoints.dart';
 
 class OrderService {
   final ApiClient _apiClient = ApiClient();
@@ -90,6 +90,19 @@ class OrderService {
       return response.data['success'] == true;
     } catch (e) {
       print('Error updating order status: $e');
+      return false;
+    }
+  }
+
+  Future<bool> cancelByBuyer(int orderId, String reason) async {
+    try {
+      final response = await _apiClient.put(
+        '${ApiEndpoints.baseUrl}/orders/$orderId/cancel-by-buyer',
+        data: {'reason': reason},
+      );
+      return response.data['success'] == true;
+    } catch (e) {
+      print('Error canceling order by buyer: $e');
       return false;
     }
   }

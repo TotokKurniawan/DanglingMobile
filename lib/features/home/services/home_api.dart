@@ -1,5 +1,5 @@
-import 'package:damping/core/network/api_client.dart';
-import 'package:damping/core/network/api_endpoints.dart';
+import 'package:streetmarketid/core/network/api_client.dart';
+import 'package:streetmarketid/core/network/api_endpoints.dart';
 
 class HomeApi {
   final ApiClient _apiClient = ApiClient();
@@ -12,12 +12,16 @@ class HomeApi {
     double? lat,
     double? lng,
     int radiusKm = 20,
+    String? category,
+    String? search,
   }) async {
     try {
       final queryParams = <String, dynamic>{
         if (lat != null) 'lat': lat,
         if (lng != null) 'lng': lng,
         'radius': radiusKm,
+        if (category != null && category != 'All') 'category': category,
+        if (search != null && search.isNotEmpty) 'search': search,
       };
 
       final response = await _apiClient.get(

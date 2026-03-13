@@ -1,5 +1,5 @@
-import 'package:damping/core/network/api_client.dart';
-import 'package:damping/core/network/api_endpoints.dart';
+import 'package:streetmarketid/core/network/api_client.dart';
+import 'package:streetmarketid/core/network/api_endpoints.dart';
 
 class NotificationService {
   final ApiClient _apiClient = ApiClient();

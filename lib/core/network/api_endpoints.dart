@@ -24,6 +24,7 @@ class ApiEndpoints {
   static const String getSellerStats = '$baseUrl/sellers/me/stats';
   static const String uploadProfilePhoto = '$baseUrl/profile/photo';
   static const String updateBuyerProfile = '$baseUrl/buyers'; // + /{id}
+  static const String updateSellerProfile = '$baseUrl/profile/seller'; // + /{id}
   static const String changePassword = '$baseUrl/change-password';
   static const String deleteAccount = '$baseUrl/account';
 

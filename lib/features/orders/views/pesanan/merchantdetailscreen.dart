@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:damping/features/home/views/home/component/map.dart';
-import 'package:damping/features/orders/views/pesanan/component/map_component.dart';
-import 'package:damping/core/providers/cart_provider.dart';
-import 'package:damping/features/orders/views/checkout/checkout_screen.dart';
+import 'package:streetmarketid/features/home/views/home/component/map.dart';
+import 'package:streetmarketid/features/orders/views/pesanan/component/map_component.dart';
+import 'package:streetmarketid/core/providers/cart_provider.dart';
+import 'package:streetmarketid/features/orders/views/checkout/checkout_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:damping/features/chats/services/chat_service.dart';
-import 'package:damping/features/chats/views/message/message.dart';
-import 'package:damping/features/profile/services/favorite_service.dart';
+import 'package:streetmarketid/features/chats/services/chat_service.dart';
+import 'package:streetmarketid/features/chats/views/message/message.dart';
+import 'package:streetmarketid/features/profile/services/favorite_service.dart';
 
 class MerchantDetailScreen extends StatefulWidget {
   final Merchant merchant;

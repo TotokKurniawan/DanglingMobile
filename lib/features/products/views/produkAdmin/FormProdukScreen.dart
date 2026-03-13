@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:damping/core/providers/sharedProvider.dart';
+import 'package:streetmarketid/core/providers/sharedProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +8,9 @@ import '../../services/product_api.dart';
 
 class FormProdukScreen extends StatefulWidget {
   static String routeName = "/FormProdukScreen";
+  final Map<String, dynamic>? initialProduct;
+
+  const FormProdukScreen({Key? key, this.initialProduct}) : super(key: key);
 
   @override
   _FormProdukScreenState createState() => _FormProdukScreenState();
@@ -32,7 +35,14 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProductData();
+    if (widget.initialProduct != null) {
+      _nameController.text = widget.initialProduct!['name'] ?? '';
+      _descriptionController.text = widget.initialProduct!['description'] ?? '';
+      _priceController.text = widget.initialProduct!['price'].toString();
+      _selectedCategory = widget.initialProduct!['category'] ?? 'Makanan Ringan';
+    } else {
+      _loadProductData();
+    }
     Provider.of<Sharedprovider>(context, listen: false).loadToken();
   }
 
@@ -71,8 +81,8 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
       return;
     }
 
-    // Foto produk wajib karena backend mensyaratkan field 'photo'
-    if (_selectedImage == null) {
+    // Foto produk wajib saat tambah produk baru
+    if (widget.initialProduct == null && _selectedImage == null) {
       _showSnackbar('Pilih foto produk terlebih dahulu.');
       return;
     }
@@ -95,13 +105,26 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
 
       print('[INFO] Mengirim produk ke server dengan data: '
           'Nama: $name, Harga: $price, Kategori: $_selectedCategory');
-      bool success = await _productApi.tambahProduk(
-        namaProduk: name,
-        deskripsi: description,
-        hargaProduk: int.parse(price),
-        kategoriProduk: _selectedCategory!,
-        foto: _selectedImage!, // Sudah divalidasi tidak null di atas
-      );
+          
+      bool success;
+      if (widget.initialProduct == null) {
+        success = await _productApi.tambahProduk(
+          namaProduk: name,
+          deskripsi: description,
+          hargaProduk: int.parse(price),
+          kategoriProduk: _selectedCategory!,
+          foto: _selectedImage!, 
+        );
+      } else {
+        success = await _productApi.updateProduct(
+          id: widget.initialProduct!['id'],
+          namaProduk: name,
+          deskripsi: description,
+          hargaProduk: int.parse(price),
+          kategoriProduk: _selectedCategory!,
+          foto: _selectedImage, 
+        );
+      }
 
 
       if (success) {
@@ -153,7 +176,7 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Tambah Produk"),
+        title: Text(widget.initialProduct == null ? "Tambah Produk" : "Edit Produk"),
         centerTitle: true,
         backgroundColor: const Color.fromRGBO(83, 109, 254, 1),
       ),
@@ -259,15 +282,31 @@ class _FormProdukScreenState extends State<FormProdukScreen> {
                 SizedBox(height: 20),
                 if (_selectedImage != null)
                   Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.file(_selectedImage!, height: 150, width: double.infinity, fit: BoxFit.cover),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.cancel, color: Colors.red),
+                          onPressed: () {
+                            setState(() {
+                              _selectedImage = null;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  )
+                else if (widget.initialProduct != null && widget.initialProduct!['photo_url'] != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        _selectedImage!,
-                        width: double.infinity,
-                        height: 200,
-                        fit: BoxFit.cover,
-                      ),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(widget.initialProduct!['photo_url'], height: 150, width: double.infinity, fit: BoxFit.cover),
                     ),
                   ),
                 SizedBox(height: 20),

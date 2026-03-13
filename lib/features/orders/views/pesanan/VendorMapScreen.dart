@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:damping/features/orders/views/pesanan/component/chat_screen.dart';
+import 'package:streetmarketid/features/orders/views/pesanan/component/chat_screen.dart';
 
 class VendorMapScreen extends StatelessWidget {
   final LatLng vendorPosition;

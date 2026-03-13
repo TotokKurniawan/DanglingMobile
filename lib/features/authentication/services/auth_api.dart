@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:damping/core/network/api_client.dart';
-import 'package:damping/core/network/api_endpoints.dart';
+import 'package:streetmarketid/core/network/api_client.dart';
+import 'package:streetmarketid/core/network/api_endpoints.dart';
 
 /// Legacy API class — sebagian besar fungsi sudah dipindahkan ke AuthService.
 /// Kelas ini masih dipertahankan untuk kompatibilitas, namun penggunaan

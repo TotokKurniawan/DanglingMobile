@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:damping/features/notifications/services/notification_service.dart';
+import 'package:streetmarketid/features/notifications/services/notification_service.dart';
 
 class NotificationListScreen extends StatefulWidget {
   static String routeName = '/notificationlistscreen';

@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:damping/features/home/services/home_api.dart';
-import 'package:damping/core/providers/sharedProvider.dart';
+import 'package:streetmarketid/features/home/services/home_api.dart';
+import 'package:streetmarketid/core/providers/sharedProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -150,6 +150,8 @@ class _MapSectionState extends State<MapSection> {
     List<Map<String, dynamic>>? pedagangData = await _homeApi.getOnlinePedagang(
       lat: _currentPosition?.latitude, 
       lng: _currentPosition?.longitude,
+      category: _selectedCategory,
+      search: _searchQuery,
     );
 
 
@@ -233,6 +235,52 @@ class _MapSectionState extends State<MapSection> {
 
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: TextField(
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+              _fetchOnlineMerchants(); // Re-fetch data from backend
+            },
+            decoration: InputDecoration(
+              hintText: 'Cari Toko / Menu...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 40,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            children: ['All', 'Makanan Ringan', 'Minuman Dingin', 'Makanan Berat', 'Jajanan Tradisional']
+                .map((category) => Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text(category, style: const TextStyle(fontSize: 12)),
+                        selected: _selectedCategory == category,
+                        selectedColor: Colors.indigoAccent.shade100,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() {
+                              _selectedCategory = category;
+                            });
+                            _fetchOnlineMerchants(); // Re-fetch data from backend
+                          }
+                        },
+                      ),
+                    ))
+                .toList(),
+          ),
+        ),
+        const SizedBox(height: 12),
         Card(
           elevation: 4,
           shape: RoundedRectangleBorder(

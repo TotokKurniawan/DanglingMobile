@@ -1,10 +1,10 @@
-import 'package:damping/features/profile/views/profil/component/updateaccount.dart';
-import 'package:damping/features/profile/views/profil/component/changepassword.dart';
+import 'package:streetmarketid/features/profile/views/profil/component/updateaccount.dart';
+import 'package:streetmarketid/features/profile/views/profil/component/changepassword.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:damping/core/providers/sharedProvider.dart';
-import 'package:damping/features/profile/services/profile_service.dart';
-import 'package:damping/features/authentication/views/sign_in/sign_in_screen.dart';
+import 'package:streetmarketid/core/providers/sharedProvider.dart';
+import 'package:streetmarketid/features/profile/services/profile_service.dart';
+import 'package:streetmarketid/features/authentication/views/sign_in/sign_in_screen.dart';
 
 class MyAccountScreen extends StatelessWidget {
   const MyAccountScreen({super.key});

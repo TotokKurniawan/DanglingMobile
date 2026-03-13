@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:damping/features/authentication/services/auth_service.dart';
-import 'package:damping/core/providers/sharedProvider.dart';
+import 'package:streetmarketid/features/authentication/services/auth_service.dart';
+import 'package:streetmarketid/core/providers/sharedProvider.dart';
 import '../../../components/custom_surfix_icon.dart';
 import '../../../components/form_error.dart';
-import 'package:damping/core/utils/constants.dart';
+import 'package:streetmarketid/core/utils/constants.dart';
 import '../../../helper/keyboard.dart';
 
 class SignInForm extends StatefulWidget {

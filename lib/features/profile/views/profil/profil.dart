@@ -1,8 +1,8 @@
-import 'package:damping/core/providers/sharedProvider.dart';
+import 'package:streetmarketid/core/providers/sharedProvider.dart';
 import 'package:flutter/material.dart';
-import 'package:damping/core/widgets/GradientBackground.dart';
-import 'package:damping/features/authentication/views/sign_in/sign_in_screen.dart';
-import 'package:damping/features/authentication/services/auth_service.dart';
+import 'package:streetmarketid/core/widgets/GradientBackground.dart';
+import 'package:streetmarketid/features/authentication/views/sign_in/sign_in_screen.dart';
+import 'package:streetmarketid/features/authentication/services/auth_service.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -12,8 +12,8 @@ import 'component/myaccount.dart';
 import 'component/mystore.dart';
 import 'component/profilmenu.dart';
 import 'component/tambahpedagang.dart';
-import 'package:damping/features/profile/views/profil/wishlist_screen.dart';
-import 'package:damping/features/profile/services/profile_service.dart';
+import 'package:streetmarketid/features/profile/views/profil/wishlist_screen.dart';
+import 'package:streetmarketid/features/profile/services/profile_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   static String routeName = "/Menu";
@@ -69,7 +69,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _checkStoreRegistration(BuildContext context, String role) {
-    if (role == 'pembeli' || role == '') {
+    // Backend Spatie roles: 'buyer' dan 'seller'
+    if (role == 'buyer' || role == '') {
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -99,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         },
       );
-    } else if (role == 'pedagang' || role == 'seller') {
+    } else if (role == 'seller') {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const MyStoreScreen()),

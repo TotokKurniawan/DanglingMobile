@@ -1,15 +1,15 @@
-import 'package:damping/core/routing/navigation.dart';
-import 'package:damping/features/home/views/home/homescreen.dart';
-import 'package:damping/features/chats/views/message/message.dart';
-import 'package:damping/features/notifications/views/notif/orderScreen.dart';
-import 'package:damping/features/profile/views/profil/profil.dart';
+import 'package:streetmarketid/core/routing/navigation.dart';
+import 'package:streetmarketid/features/home/views/home/homescreen.dart';
+import 'package:streetmarketid/features/chats/views/message/message.dart';
+import 'package:streetmarketid/features/notifications/views/notif/orderScreen.dart';
+import 'package:streetmarketid/features/profile/views/profil/profil.dart';
 import 'package:flutter/material.dart';
-import 'package:damping/features/splash/views/splash/splash_screen.dart';
-import 'package:damping/features/authentication/views/sign_in/sign_in_screen.dart';
-import 'package:damping/features/authentication/views/sign_up/sign_up_screen.dart';
-import 'package:damping/features/authentication/views/forgot_password/forgot_password_screen.dart';
-import 'package:damping/features/authentication/views/forgot_password/reset_password_screen.dart';
-import 'package:damping/features/products/views/produkAdmin/FormProdukScreen.dart';
+import 'package:streetmarketid/features/splash/views/splash/splash_screen.dart';
+import 'package:streetmarketid/features/authentication/views/sign_in/sign_in_screen.dart';
+import 'package:streetmarketid/features/authentication/views/sign_up/sign_up_screen.dart';
+import 'package:streetmarketid/features/authentication/views/forgot_password/forgot_password_screen.dart';
+import 'package:streetmarketid/features/authentication/views/forgot_password/reset_password_screen.dart';
+import 'package:streetmarketid/features/products/views/produkAdmin/FormProdukScreen.dart';
 // ignore: unused_import
 
 import 'dart:io';

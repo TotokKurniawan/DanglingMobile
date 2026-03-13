@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:damping/features/orders/services/order_service.dart';
+import 'package:streetmarketid/features/orders/services/order_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:damping/features/orders/views/history/review_screen.dart';
+import 'package:streetmarketid/features/orders/views/history/review_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   static String routeName = '/historyscreen';
@@ -85,6 +85,73 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gagal pesan ulang.')),
       );
+    }
+  }
+
+  Future<void> _cancelOrder(int orderId) async {
+    String reason = '';
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Batal Pesanan'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Apakah Anda yakin ingin membatalkan pesanan ini?'),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Alasan Pembatalan',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => reason = value,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Tidak'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Ya, Batalkan', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      if (reason.trim().isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Alasan pembatalan harus diisi.')),
+        );
+        return;
+      }
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+      
+      final success = await _orderService.cancelByBuyer(orderId, reason);
+      
+      if (!mounted) return;
+      Navigator.pop(context); // close loading
+      
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pesanan berhasil dibatalkan.')),
+        );
+        _fetchOrderHistory();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal membatalkan pesanan.')),
+        );
+      }
     }
   }
 
@@ -226,6 +293,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orangeAccent,
                     foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+
+            if (widget.role == 'buyer' && status == 'PENDING') ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _cancelOrder(orderId),
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: const Text('Batalkan Pesanan'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
                   ),
                 ),
               ),

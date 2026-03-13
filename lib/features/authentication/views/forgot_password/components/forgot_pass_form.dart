@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:damping/features/authentication/services/auth_service.dart';
+import 'package:streetmarketid/features/authentication/services/auth_service.dart';
 import '../../../components/custom_surfix_icon.dart';
 import '../../../components/no_account_text.dart';
-import 'package:damping/core/utils/constants.dart';
+import 'package:streetmarketid/core/utils/constants.dart';
 
 
 class ForgotPassForm extends StatefulWidget {

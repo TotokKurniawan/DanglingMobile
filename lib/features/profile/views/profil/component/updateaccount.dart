@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:damping/core/providers/sharedProvider.dart';
-import 'package:damping/features/profile/services/profile_service.dart';
+import 'package:streetmarketid/core/providers/sharedProvider.dart';
+import 'package:streetmarketid/features/profile/services/profile_service.dart';
 
 class UpdateProfileForm extends StatefulWidget {
   @override
@@ -39,10 +39,12 @@ class _UpdateProfileFormState extends State<UpdateProfileForm> {
       _formKey.currentState!.save();
       
       final sharedProvider = Provider.of<Sharedprovider>(context, listen: false);
-      final buyerId = sharedProvider.idUser;
-      
+      // Backend: Buyer::find($id) → id adalah primary key tabel buyers (bukan user_id)
+      // idPedagang disimpan saat login (buyer) atau upgrade ke seller (seller)
+      final buyerId = sharedProvider.idPedagang;
+
       if (buyerId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ID Pengguna tidak ditemukan.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data pembeli tidak ditemukan. Coba login ulang.')));
         return;
       }
 

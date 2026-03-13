@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:damping/features/authentication/services/auth_service.dart';
+import 'package:streetmarketid/features/authentication/services/auth_service.dart';
 
 
 class ResetPasswordScreen extends StatefulWidget {
